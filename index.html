@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RH Mantrailing-Assistent · v2.1</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0f766e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mantrailing">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--a:#0f766e;--bg:#f5f5f4;--card:#fff;--ink:#1c1917;--mut:#6b7280;--line:#d6d3d1}
+*{box-sizing:border-box}body{margin:0;font:15px system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--ink)}
+header{position:sticky;top:0;z-index:4;background:#fff;border-bottom:1px solid var(--line);padding:12px 14px}
+h1{font-size:19px;margin:0}header p{margin:3px 0 0;color:var(--mut);font-size:12px}
+nav{display:flex;gap:6px;overflow:auto;padding:9px 12px;background:#fff;border-bottom:1px solid var(--line)}
+nav button,.btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 11px;font-weight:650;white-space:nowrap}
+nav button.on,.btn.primary{background:var(--a);color:#fff;border-color:var(--a)}
+main{max-width:920px;margin:auto;padding:12px}section{display:none}section.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:11px;box-shadow:0 1px 2px #0000000d}
+h2{font-size:16px;margin:0 0 9px}h3{font-size:14px;margin:12px 0 7px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+label{display:block;font-size:12px;color:#57534e}input,select,textarea{width:100%;margin-top:4px;border:1px solid #c7c2bd;border-radius:9px;padding:9px;background:#fff;font:inherit;color:var(--ink)}textarea{resize:vertical}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}.chip{border:1px solid #c7c2bd;background:#fff;border-radius:999px;padding:7px 9px;font-size:12px}.chip.on{background:#292524;color:#fff}
+.row{display:flex;gap:7px;flex-wrap:wrap;align-items:center}.muted{color:var(--mut);font-size:12px}.warn{background:#fff7ed;border-left:4px solid #ea580c;padding:9px;border-radius:8px}
+.good{background:#f0fdf4;border-left:4px solid #16a34a;padding:9px;border-radius:8px}.event{border-left:3px solid var(--a);padding:7px 9px;margin:6px 0;background:#fafaf9;border-radius:7px}
+.big{font-size:17px;padding:13px 16px}canvas{width:100%;height:320px;border:1px solid var(--line);border-radius:10px;background:#fff}.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;margin:7px 0}.dot{display:inline-block;width:12px;height:4px;border-radius:3px;vertical-align:middle;margin-right:4px}.ref{background:#dc2626}.hf{background:#0f766e}.dog{background:#2563eb}
+@media(max-width:650px){.grid{grid-template-columns:1fr}main{padding:8px}}
+@media print{header,nav,.noprint{display:none!important}section{display:block!important}.card{break-inside:avoid;box-shadow:none}body{background:white}}
+</style></head>
+<body><header><h1>RH Mantrailing-Assistent <small>v2.1</small></h1><p>Geruchsartikel · Startanalyse · Trailentscheidungen · GPS · schlanke Übergabe · offline-first · lokale Speicherung</p></header>
+<nav id="nav"></nav><main>
+<section data-page="Einsatz">
+<div class="card"><div class="row noprint"><button class="btn primary" onclick="newCase()">＋ Neuer Vorgang</button></div><h2>Vorgang</h2><div class="grid"><label>Art<select data-k="mode" onchange="modeChanged()"><option>Training</option><option>Prüfung</option><option>Einsatz</option></select></label></div><div class="exam-only"><details><summary><b>Prüfungsvorgaben</b> · kompakt und anpassbar</summary><div class="grid"><label>Vorlage<select data-k="examPreset" onchange="applyExamPreset(this.value)"><option value="custom">Eigene Vorgaben</option><option value="drk">DRK 2024</option><option value="iro">FCI/IRO 2025</option></select></label><label>Prüfungsgrundlage / Stufe<input data-k="examRule" placeholder="z. B. Verband / Stufe"></label><label>Stufe (bei FCI/IRO)<select data-k="examLevel" onchange="applyExamPreset(S.examPreset||'custom')"><option value="">–</option><option>V</option><option>A</option><option>B</option></select></label><label>Max. Suchzeit (min)<input type="number" min="1" data-k="examMinutes"></label><label>Traillänge (m)<input data-k="examLength" inputmode="numeric"></label><label>Trailalter<input data-k="examAge" placeholder="z. B. 8–20 h"></label><label>Ansatz/PLS max. (min)<input type="number" min="0" data-k="examPLSMinutes"></label></div><label><input type="checkbox" id="rememberExam" onchange="rememberExamSettings(this.checked)"> Diese Vorgaben auf diesem Gerät merken</label><div class="row noprint" style="margin-top:8px"><button type="button" class="btn" onclick="saveExamPresetFile()">⬇ Prüfungsvorgaben teilen</button><button type="button" class="btn" onclick="document.getElementById('examPresetImport').click()">⬆ Prüfungsvorgaben laden</button><input id="examPresetImport" type="file" accept="application/json,.json" hidden onchange="importExamPresetFile(this)"></div><p class="muted">Vorlagen sind nur Startwerte. Zeit, Länge, Alter und PLS bleiben frei änderbar, damit unterschiedliche Prüfungsordnungen abgebildet werden können.</p></details></div><div id="saveStatus" class="muted"></div></div>
+<div class="card"><h2>Auftrag & Person</h2><div class="grid"><label>Team / Hund<input data-k="team"></label><label>Vermisste Person / Kennung<input data-k="missing"></label><label>Datum / Uhrzeit<input type="datetime-local" data-k="date"></label><label class="training-only">Trail gelegt<input type="datetime-local" data-k="laid"></label><label class="training-only">Spurenleger / VP<input data-k="layer" placeholder="optional"></label><label>Letzter gesicherter Punkt (LKP)<input data-k="lkp"></label></div>
+<label>Lage / Befragung<textarea data-k="brief" rows="4" placeholder="Wann zuletzt sicher gesehen? Mobilität, mögliche Verkehrsmittel, bekannte Ziele, Begleitpersonen, Besonderheiten"></textarea></label></div>
+<div class="card"><h2>Geruchsartikel / Referenzgeruch</h2><div class="grid"><label>Art<input data-k="saType"></label><label>Herkunft / Zuordnung<input data-k="saOrigin"></label><label>Kontamination<select data-k="saCont"><option>möglichst sauber</option><option>möglicherweise kontaminiert</option><option>bekannt kontaminiert</option><option>unklar</option></select></label><label>Wer hat ihn berührt?<input data-k="saTouched"></label></div>
+<p class="warn">Geruchsartikel möglichst sauber handhaben und Kontamination dokumentieren. Die App bewertet nicht, ob ein Geruchsartikel beweissicher oder einsatztaktisch geeignet ist.</p></div>
+</section>
+<section data-page="Start">
+<div class="card"><h2>Wetter am Startpunkt</h2><div class="row noprint"><button class="btn" onclick="fetchWeather()">📍 Wetter per GPS abrufen</button><button type="button" class="btn" onclick="weatherDiagnose()">🔧 Verbindung prüfen</button></div><div class="grid noprint" style="margin-top:8px"><label>Falls GPS nicht verfügbar: Ort oder PLZ<input id="weatherPlace" placeholder="z. B. 34369 Hofgeismar"></label><label>&nbsp;<button type="button" class="btn" style="margin-top:4px;width:100%" onclick="fetchWeatherByPlace()">Wetter über Ort / PLZ</button></label></div><div id="weatherStatus" class="muted"></div><div class="grid"><label>Temperatur °C<input data-k="wxTemp" inputmode="decimal"></label><label>Luftfeuchte %<input data-k="wxHumidity" inputmode="numeric"></label><label>Windrichtung °<input data-k="wxWindDir" inputmode="numeric"></label><label>Wind km/h<input data-k="wxWind" inputmode="decimal"></label><label>Böen km/h<input data-k="wxGust" inputmode="decimal"></label><label>Niederschlag mm<input data-k="wxPrecip" inputmode="decimal"></label></div><label>Beobachtung vor Ort / bodennahe Luftbewegung<input data-k="wxLocal" placeholder="optional – maßgeblich für die unmittelbare Geruchslage"></label><p class="muted">Online-Abruf ist optional; ohne Internet bleiben alle Felder manuell nutzbar. Modellwetter ersetzt nicht die Beobachtung vor Ort.</p></div>
+<div class="card"><h2>Startanalyse</h2><div class="grid"><label>Trailalter<select data-k="age"><option>frisch / Hot Trail</option><option>mehrere Stunden</option><option>über 8 h / Cold Trail</option><option>über 24 h</option><option>unbekannt</option></select></label><label>Startumfeld<select data-k="startEnv"><option>ländlich</option><option>Wohngebiet</option><option>Innenstadt</option><option>Parkplatz</option><option>Bahnhof/ÖPNV</option><option>Gebäude</option></select></label><label>Wind<select data-k="wind"><option>ruhig</option><option>leicht</option><option>mittel</option><option>stark</option><option>wechselnd</option></select></label><label>Frequentierung<select data-k="traffic"><option>gering</option><option>mittel</option><option>hoch</option><option>sehr hoch</option></select></label></div>
+<h3>Mögliche Besonderheiten</h3><div class="chips"><button type="button" class="chip" data-g="startFactors">mehrere Abgangsrichtungen</button><button type="button" class="chip" data-g="startFactors">Kreuzung</button><button type="button" class="chip" data-g="startFactors">Parkplatz</button><button type="button" class="chip" data-g="startFactors">Fahrzeug möglich</button><button type="button" class="chip" data-g="startFactors">ÖPNV möglich</button><button type="button" class="chip" data-g="startFactors">Wohnumfeld VP</button><button type="button" class="chip" data-g="startFactors">Menschenmenge</button><button type="button" class="chip" data-g="startFactors">starker Verkehr</button><button type="button" class="chip" data-g="startFactors">Windkanal/Bebauung</button></div>
+<label>Beobachtung am Start<textarea data-k="startObs" rows="3"></textarea></label>
+<h3>Ansatzsuche / Point Last Seen (PLS)</h3>
+<div class="grid"><label>Ansatzbereich / Radius<input data-k="plsArea" placeholder="z. B. Parkplatz, 30 m Radius"></label>
+<label>Mögliche Abgänge<input data-k="plsExits" placeholder="z. B. 4 Wege + Gebäudeeingang"></label>
+<label>Ansatzbelastung<select data-k="plsLoad"><option>gering</option><option>mittel</option><option>hoch</option><option>sehr hoch / kontaminiert</option></select></label>
+<label>Ansatzart<select data-k="plsType"><option>kleiner Kreisansatz</option><option>großer PLS</option><option>Kreuzungsansatz</option><option>Gebäude / mehrere Ausgänge</option><option>freier Platz / Parkplatz</option><option>Negativ-PLS</option></select></label>
+<label>Ergebnis<select data-k="plsResult"><option>noch offen</option><option>Abgang selbstständig gefunden</option><option>mit Hilfe gefunden</option><option>Fehlansatz selbst korrigiert</option><option>Fehlansatz durch HF/Trainer korrigiert</option><option>kein Abgang / Negativ korrekt</option><option>kein eindeutiges Ergebnis</option></select></label>
+<label>Zeit bis Richtungsentscheidung<input data-k="plsTime" placeholder="min:s"></label>
+<label>Sicherheit der Entscheidung<select data-k="plsConfidence"><option>nicht bewertet</option><option>5 – sehr eindeutig</option><option>4 – sicher</option><option>3 – wechselhaft</option><option>2 – unsicher</option><option>1 – keine verwertbare Entscheidung</option></select></label>
+<label>Anschließende Trailaufnahme<select data-k="plsToTrail"><option>direkt und klar</option><option>nach kurzer Prüfung</option><option>mit Hilfe</option><option>Trail nicht aufgenommen</option><option>Negativaufgabe – entfällt</option></select></label></div>
+<label>PLS-Verlauf / Fehlansätze / Hilfen<textarea data-k="plsNotes" rows="3"></textarea></label>
+<div class="row noprint"><button class="btn" onclick="stamp('PLS: möglicher Abgang')">Abgang markieren</button><button class="btn" onclick="stamp('PLS: Fehlansatz')">Fehlansatz</button><button class="btn" onclick="stamp('PLS: Negativ / kein Abgang')">PLS negativ</button><button class="btn" onclick="stamp('PLS abgeschlossen / Trailstart')">Trailstart übernehmen</button></div>
+<div id="mtAdvice" class="good"></div><button class="btn noprint" onclick="calcMT()">Hinweise aktualisieren</button></div>
+</section>
+<section data-page="Live">
+<div class="card"><h2>Live-Karte</h2>
+<div id="liveMap" class="noprint" style="height:280px;border:1px solid var(--line);border-radius:10px;margin:4px 0;background:#eee"></div>
+<div class="row noprint" style="margin-top:4px"><button type="button" class="btn" onclick="centerOnCurrentLocation(false)">📍 Auf aktuellen Standort zentrieren</button></div>
+<div id="liveMapStatus" class="muted"></div>
+<p class="muted">Zeigt die aktuelle Position und den bisher aufgezeichneten GPS-Track auf einer echten Karte (OpenFreeMap, kostenlos, ohne API-Key, ausdrücklich für Apps erlaubt). Jeder online angesehene Kartenausschnitt wird automatisch lokal zwischengespeichert.</p>
+<p class="muted">Für einen zuverlässig funkfreien Einsatz zusätzlich vorab gezielt herunterladen:</p>
+<div class="row noprint"><label style="flex:1 1 160px">Download-Radius um Kartenmitte (m)<input id="tileDownloadRadius" type="number" value="1500" min="100" step="100"></label><label>&nbsp;<button type="button" class="btn" style="margin-top:4px;width:100%" onclick="downloadMapArea()">⬇ Kartenbereich offline speichern</button></label></div>
+<p class="muted">Vorher auf der Karte zum gewünschten Suchgebiet zoomen/schieben – der Bereich um die aktuelle Kartenmitte wird heruntergeladen (nur bei bestehender Verbindung möglich).</p>
+<div id="tileDownloadStatus" class="muted"></div>
+<div class="row noprint" style="margin-top:4px"><button type="button" class="btn" onclick="showTileCacheInfo()">Gespeicherte Kacheln anzeigen</button><button type="button" class="btn" onclick="confirmClearTiles()">Kartencache leeren</button></div>
+</div>
+<div class="card"><h2>Trail läuft</h2>
+<div class="grid noprint"><label>Trackmodus<select id="trackMode" onchange="setTrackMode(this.value)"><option value="gps">GPS-Track</option><option value="time">Nur Zeit (kein GPS)</option></select></label><label>&nbsp;<div id="trackModeHint" class="muted" style="margin-top:8px"></div></label></div>
+<div id="wakeLockStatus" class="muted"></div>
+<div class="row noprint"><button class="btn primary big" onclick="startTracking()">Trail starten</button><button class="btn" onclick="stopTracking()">Track stoppen</button><button class="btn big" onclick="stamp('Entscheidung')">Entscheidung</button><button class="btn big" onclick="stamp('Negativ')">Negativ</button><button class="btn" onclick="stamp('Geruch verloren')">Geruch verloren</button><button class="btn" onclick="stamp('Geruch wieder aufgenommen')">wieder aufgenommen</button><button class="btn" onclick="stamp('Kreuzung')">Kreuzung</button><button class="btn" onclick="stamp('Wiederansatz / Drop')">Wiederansatz</button><button class="btn" onclick="stamp('Fahrzeug/ÖPNV-Hinweis')">Fahrzeug/ÖPNV</button><button class="btn" onclick="stamp('Fund')">Fund</button></div>
+<div id="timeTrackBox" class="row noprint" style="display:none"><b id="timeTrackClock">00:00</b><button type="button" class="btn" onclick="addTimeWaypoint()">Zeitpunkt markieren</button></div>
+<p class="muted">Start erst nach Start-Angaben möglich (Beobachtung am Start, Ansatzbereich oder Besonderheiten unter „Start“). Falls Android bei lokal geöffneten HTML-Dateien den Standort sperrt, bleibt der Trackmodus „Nur Zeit“ nutzbar.</p>
+<label>Kurznotiz<input id="quickNote"></label><button class="btn noprint" onclick="stamp('Beobachtung',$('#quickNote').value);$('#quickNote').value=''">Notiz</button><div id="events"></div></div>
+<div class="card"><h2>Trackvergleich</h2>
+<p class="muted">Der Referenztrack des Spurlegers kann vor, während oder nach dem Trail geladen werden. Im Blindmodus bleibt er bis zum Trailende verborgen. Eine geometrische Abweichung ist keine automatische Leistungsbewertung.</p>
+<div class="grid"><label>Referenztrack-Sichtbarkeit<select id="refMode" onchange="setRefMode(this.value)"><option value="blind">Blindmodus – erst nach Trailende</option><option value="helper">Helfermodus – während Trail sichtbar</option><option value="open">Offener Trainingsmodus</option></select></label><label>Trackanzeige<select id="trackView" onchange="S.trackView=this.value;save();drawTrack()"><option value="all">alle verfügbaren Tracks</option><option value="refhf">Spurleger + Hundeführer</option><option value="refdog">Spurleger + Hund</option><option value="hf">nur Hundeführer</option></select></label></div>
+<div class="row noprint"><label class="btn">Spurleger-Track laden<input hidden type="file" accept=".gpx,.kml,.json" onchange="importTrackFile(this,'reference')"></label><label class="btn">Hundetrack laden<input hidden type="file" accept=".gpx,.kml,.json" onchange="importTrackFile(this,'dog')"></label><label class="btn">Hundetrack-Screenshot<input hidden type="file" accept="image/*" onchange="loadTrackOverlay(this)"></label><button class="btn" onclick="S.trailEnded=true;save();drawTrack();stamp('Trail beendet / Referenz freigegeben')">Trail beenden / Vergleich freigeben</button><button class="btn" onclick="clearTrackExtras()">Zusatztracks löschen</button></div>
+<div id="trackStatus" class="muted"></div><div class="legend"><span><i class="dot ref"></i>Spurleger</span><span><i class="dot hf"></i>Hundeführer</span><span><i class="dot dog"></i>Hund</span></div>
+<canvas id="track"></canvas>
+<div id="timeTrackList"></div>
+<div id="trackCompare" class="good"></div>
+<div id="overlayControls" class="grid" style="display:none"><label>Screenshot Deckkraft<input id="ovOpacity" type="range" min="0.15" max="1" step="0.05" value="0.45" oninput="overlay.opacity=+this.value;drawTrack()"></label><label>Screenshot Größe<input id="ovScale" type="range" min="0.4" max="2" step="0.05" value="1" oninput="overlay.scale=+this.value;drawTrack()"></label><label>Horizontal verschieben<input id="ovX" type="range" min="-1" max="1" step="0.02" value="0" oninput="overlay.x=+this.value;drawTrack()"></label><label>Vertikal verschieben<input id="ovY" type="range" min="-1" max="1" step="0.02" value="0" oninput="overlay.y=+this.value;drawTrack()"></label></div>
+</div></section>
+<section data-page="Bewertung"><div class="card training-only"><h2>Trainingsauswertung · Start → Suche → Auffindeort</h2><div class="grid"><label>Fortschritt Start / Geruchsaufnahme<select data-k="progStart"><option>nicht bewertet</option><option>1 – Aufbau</option><option>2 – mit deutlicher Hilfe</option><option>3 – wechselhaft</option><option>4 – sicher</option><option>5 – sehr sicher / selbstständig</option></select></label><label>Fortschritt Sucharbeit<select data-k="progSearch"><option>nicht bewertet</option><option>1 – Aufbau</option><option>2 – mit deutlicher Hilfe</option><option>3 – wechselhaft</option><option>4 – sicher</option><option>5 – sehr sicher / selbstständig</option></select></label><label>Fortschritt Auffindeort / Anzeige<select data-k="progFind"><option>nicht bewertet</option><option>1 – Aufbau</option><option>2 – mit deutlicher Hilfe</option><option>3 – wechselhaft</option><option>4 – sicher</option><option>5 – sehr sicher / selbstständig</option></select></label></div></div>
+<div class="card training-only"><h2>Kreuzungsarbeit & Negativ / Trailabriss</h2><p class="muted">Nur bewerten, wenn im Training tatsächlich entsprechende Situationen vorkamen. Mehrere Situationen können über „Ereignis hinzufügen“ einzeln dokumentiert werden.</p><div class="grid"><label>Entscheidungssicherheit Kreuzungen<select data-k="crossConfidence"><option>nicht bewertet</option><option>5 – sehr eindeutig</option><option>4 – sicher nach kurzer Prüfung</option><option>3 – längere Prüfung / wechselhaft</option><option>2 – unsicher</option><option>1 – Hilfe nötig</option></select></label><label>Typische Reaktion<select data-k="crossBehavior"><option>nicht bewertet</option><option>direkt entschieden</option><option>Richtungen geprüft, selbst entschieden</option><option>Fehlentscheidung selbst korrigiert</option><option>HF-/Trainerhilfe nötig</option></select></label><label>Negativ / Ausschluss<select data-k="negativeWork"><option>nicht bewertet</option><option>Negativ klar angezeigt</option><option>falschen Abgang selbst ausgeschlossen</option><option>Trail verloren und Verlust angezeigt</option><option>Trail nach Verlust wieder aufgenommen</option><option>Trailabriss / Fahrzeug plausibel erkannt</option><option>unklar / Hilfe nötig</option></select></label><label>Ursache / Situation<select data-k="negativeContext"><option>nicht bewertet</option><option>Negativtrail – Person war hier nicht</option><option>falsches Abbiegen / Ausschluss</option><option>Geruchsverlust</option><option>Fahrzeugeinstieg / ÖPNV</option><option>sonstiger Trailabriss</option></select></label></div><div class="row noprint"><button class="btn" onclick="stamp('Kreuzung: '+(S.crossConfidence||'nicht bewertet'),S.crossBehavior||'')">Kreuzung als Ereignis</button><button class="btn" onclick="stamp('Negativ/Ausschluss: '+(S.negativeWork||'nicht bewertet'),S.negativeContext||'')">Negativ/Ausschluss als Ereignis</button></div></div>
+<div class="card"><h2>Hund & Hundeführer</h2><div class="grid">
+<label>Start / Spuraufnahme<select data-k="startQ"><option>klar</option><option>ausgearbeitet</option><option>unsicher</option><option>kein Trail / Negativ</option></select></label>
+<label>Selbstständigkeit<select data-k="independent"><option>sehr gut</option><option>gut</option><option>wechselhaft</option><option>zu stark beeinflusst</option></select></label>
+<label>Finderwille<select data-k="drive"><option>sehr hoch</option><option>gut</option><option>nachlassend</option><option>gering</option></select></label>
+<label>Konzentration<select data-k="focus"><option>stabil</option><option>wechselhaft</option><option>ablenkbar</option><option>abgebrochen</option></select></label>
+<label>Leinen-/Körperhandling HF<select data-k="handling"><option>ruhig / neutral</option><option>kleine Einflüsse</option><option>deutlich beeinflusst</option><option>störend</option></select></label>
+<label>Personendifferenzierung<select data-k="indication"><option>eindeutig</option><option>mit Prüfung</option><option>unsicher</option><option>nicht erfolgt</option></select></label></div>
+<label>Entscheidungspunkte / Interpretation<textarea data-k="interpret" rows="4"></textarea></label></div></section>
+<section data-page="Abschluss"><div class="card"><h2>Fund / Übergabe</h2><div class="grid"><label>Ergebnis<select data-k="result"><option>Person gefunden</option><option>Trail bis definiertem Punkt</option><option>Negativ</option><option>Fahrzeug/ÖPNV wahrscheinlich</option><option>abgebrochen</option><option>ohne Ergebnis</option></select></label><label>Fundort / Endpunkt<input data-k="end"></label></div>
+<h3>Endpool &amp; Auffindesituation</h3>
+<div class="grid"><label>Endpool<select data-k="endPool"><option>nicht beurteilt</option><option>klar erkennbar</option><option>groß / weit verteilt</option><option>klein / eng</option><option>mehrere Geruchszonen</option><option>kein Endpool erkennbar</option></select></label>
+<label>Hund im Endpool<select data-k="endPoolDog"><option>nicht bewertet</option><option>direkt zur VP differenziert</option><option>Pool systematisch ausgearbeitet</option><option>mehrere Personen geprüft</option><option>überschossen / zurückgearbeitet</option><option>unsicher / Hilfe nötig</option></select></label>
+<label>Auffindesituation<select data-k="findSituation"><option>offen stehend</option><option>offen sitzend</option><option>offen liegend</option><option>verdeckt / hinter Sichtschutz</option><option>in Gebäude / Raum</option><option>in Personengruppe</option><option>bewegte Zielperson</option><option>medizinische Lage / nicht ansprechbar</option><option>sonstige</option></select></label>
+<label>Anzeige / Fundverhalten<select data-k="finalIndication"><option>nicht bewertet</option><option>eindeutig und selbstständig</option><option>eindeutig nach Ausarbeitung</option><option>unsicher</option><option>abgebrochen</option></select></label><label>Personendifferenzierung<select data-k="personDiff"><option>eindeutig</option><option>nach Ausarbeitung</option><option>mehrere Personen geprüft</option><option>unsicher</option><option>nicht erfolgt</option></select></label></div>
+<label>Endpool-Verhalten / Anzeige / genaue Auffindesituation<textarea data-k="endPoolNotes" rows="4" placeholder="Geruchsverteilung, Suchverhalten, Annäherung, Anzeige, Position und Zustand der VP"></textarea></label>
+<label>Kurze Meldung an Einsatz-/Polizeiführung<textarea data-k="radio" rows="3" placeholder="Team, Ergebnis, Fund-/Endpunkt, ggf. Zustand/weitere Kräfte"></textarea></label>
+<p class="muted">Der Funk-/Übergabebereich ist bewusst schlank gehalten, da beim Mantrailing häufig Polizei oder weitere Einsatzkräfte unmittelbar begleiten.</p>
+<label>Nachbesprechung / nächster Trainingspunkt<textarea data-k="debrief" rows="4"></textarea></label><div class="row noprint"><button class="btn" onclick="protocol()">Drucken / PDF</button><button class="btn training-only" onclick="exportTraining()">Für MT-Tagebuch exportieren</button><button class="btn deployment-only" onclick="exportDeployment()">An Einsatzprotokoll übergeben</button><button class="btn" onclick="backup()">JSON-Sicherung</button><label class="btn">Sicherung laden<input hidden type="file" accept=".json" onchange="restore(this)"></label><button class="btn" onclick="resetAll()">Neuer Vorgang</button></div></div></section>
+</main>
+<script>
+const KEY="rhs-mantrailing-assistent-v1", $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+let S={version:3,mode:'Training',createdAt:new Date().toISOString(),events:[],track:[],finds:[],referenceTrack:[],dogTrack:[],refMode:'blind',trackView:'all',trailEnded:false,trackMode:'gps',timeTrack:[],searchStartAt:null,trackRunning:false};
+try{S=Object.assign(S,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
+let saveWarned=false;function setSaveStatus(t,bad=false){let e=$('#saveStatus');if(e){e.textContent=t;e.style.color=bad?'#b91c1c':''}}function idbMirror(payload){try{let q=indexedDB.open('RHS-AssistantStore',1);q.onupgradeneeded=()=>{if(!q.result.objectStoreNames.contains('states'))q.result.createObjectStore('states')};q.onsuccess=()=>{let db=q.result,tx=db.transaction('states','readwrite');tx.objectStore('states').put(payload,KEY);tx.oncomplete=()=>db.close()}}catch(e){}}function idbRecoverNewest(after){try{let q=indexedDB.open('RHS-AssistantStore',1);q.onupgradeneeded=()=>{if(!q.result.objectStoreNames.contains('states'))q.result.createObjectStore('states')};q.onsuccess=()=>{let db=q.result,tx=db.transaction('states','readonly'),r=tx.objectStore('states').get(KEY);r.onsuccess=()=>{let m=r.result;db.close();if(m&&(!S.updatedAt||String(m.updatedAt||'')>String(S.updatedAt||''))){S=Object.assign(S,m);setSaveStatus('Neueren Stand aus Gerätespeicher wiederhergestellt.');if(after)after(true)}else if(after)after(false)};r.onerror=()=>{db.close();if(after)after(false)}}}catch(e){if(after)after(false)}}function save(){S.updatedAt=new Date().toISOString();let payload=JSON.stringify(S);try{localStorage.setItem(KEY,payload);idbMirror(S);setSaveStatus('Gespeichert · '+new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}));return true}catch(e){idbMirror(S);setSaveStatus('Lokaler Speicher fehlgeschlagen – Kopie im Gerätespeicher wird versucht. Bitte JSON sichern.',true);return false}}
+function bind(){$$('[data-k]').forEach(el=>{let k=el.dataset.k;if(S[k]!=null)el.value=S[k];el.oninput=()=>{S[k]=el.value;save();}});$$('.chip').forEach(b=>b.onclick=()=>{b.classList.toggle('on');saveChips();});}
+function saveChips(){S.chips={};$$('.chip.on').forEach(b=>(S.chips[b.dataset.g]??=[]).push(b.textContent));save();}
+function loadChips(){for(const [g,a] of Object.entries(S.chips||{}))$$(`.chip[data-g="${g}"]`).forEach(b=>b.classList.toggle('on',a.includes(b.textContent)));}
+function pages(){let secs=$$('section[data-page]');let n=$('#nav');n.innerHTML='';secs.forEach((s,i)=>{let b=document.createElement('button');b.textContent=s.dataset.page;b.onclick=()=>show(i);n.appendChild(b)});show(0)}
+function show(i){$$('section[data-page]').forEach((s,j)=>s.classList.toggle('on',i===j));$$('#nav button').forEach((b,j)=>b.classList.toggle('on',i===j));scrollTo(0,0);let page=$$('section[data-page]')[i]?.dataset.page;if(page==='Live')ensureLiveMap();}
+function stamp(type,note=''){S.events.push({id:crypto.randomUUID?.()||Date.now()+Math.random(),at:new Date().toISOString(),type,note});save();renderEvents();}
+function renderEvents(){let e=$('#events');if(e)e.innerHTML=(S.events||[]).slice().reverse().map(x=>`<div class="event"><b>${new Date(x.at).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})} · ${x.type}</b>${x.note?'<br>'+esc(x.note):''}</div>`).join('')||'<p class="muted">Noch keine Ereignisse.</p>';}
+function esc(x){return String(x||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+const MAPLIBRE_JS_CDN='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js';
+const MAPLIBRE_CSS_CDN='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css';
+const OFM_STYLE_URL='https://tiles.openfreemap.org/styles/positron';
+let maplibreLoadPromise=null;
+function loadStylesheet(href){if(document.querySelector(`link[href="${href}"]`))return;const l=document.createElement('link');l.rel='stylesheet';l.href=href;document.head.appendChild(l);}
+function loadScript(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=()=>resolve();s.onerror=()=>reject(new Error('Skript konnte nicht geladen werden (kein Internet oder CDN nicht erreichbar): '+src));document.head.appendChild(s);});}
+function loadMapLibre(){
+ if(window.maplibregl)return Promise.resolve();
+ if(maplibreLoadPromise)return maplibreLoadPromise;
+ loadStylesheet(MAPLIBRE_CSS_CDN);
+ maplibreLoadPromise=loadScript(MAPLIBRE_JS_CDN).then(()=>{
+  maplibregl.addProtocol('ofc',async (params)=>{
+   let real=decodeURIComponent(params.url.replace('ofc://',''));
+   let cached=await tileGet(real);
+   if(cached)return {data:cached};
+   if(navigator.onLine===false)throw new Error('offline und nicht zwischengespeichert');
+   let r=await fetch(real,{mode:'cors'});
+   if(!r.ok)throw new Error('HTTP '+r.status);
+   let buf=await r.arrayBuffer();
+   tileSet(real,buf);
+   return {data:buf};
+  });
+ });
+ return maplibreLoadPromise;
+}
+// --- Lokaler Kartendaten-Cache (IndexedDB) für Offline-Nutzung, Schlüssel = volle Kachel-URL ---
+let tileDbPromise=null;
+function openTileDB(){if(tileDbPromise)return tileDbPromise;tileDbPromise=new Promise((resolve,reject)=>{try{let q=indexedDB.open('RHS-MapTiles',2);q.onupgradeneeded=()=>{if(!q.result.objectStoreNames.contains('tiles'))q.result.createObjectStore('tiles')};q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error)}catch(e){reject(e)}});return tileDbPromise;}
+function tileGet(key){return openTileDB().then(db=>new Promise(resolve=>{try{let r=db.transaction('tiles','readonly').objectStore('tiles').get(key);r.onsuccess=()=>resolve(r.result||null);r.onerror=()=>resolve(null)}catch(e){resolve(null)}})).catch(()=>null)}
+function tileSet(key,data){return openTileDB().then(db=>new Promise(resolve=>{try{let tx=db.transaction('tiles','readwrite');tx.objectStore('tiles').put(data,key);tx.oncomplete=()=>resolve(true);tx.onerror=()=>resolve(false)}catch(e){resolve(false)}})).catch(()=>false)}
+function tileCount(){return openTileDB().then(db=>new Promise(resolve=>{try{let req=db.transaction('tiles','readonly').objectStore('tiles').count();req.onsuccess=()=>resolve(req.result);req.onerror=()=>resolve(0)}catch(e){resolve(0)}})).catch(()=>0)}
+function tileClearAll(){return openTileDB().then(db=>new Promise(resolve=>{try{let tx=db.transaction('tiles','readwrite');tx.objectStore('tiles').clear();tx.oncomplete=()=>resolve(true);tx.onerror=()=>resolve(false)}catch(e){resolve(false)}})).catch(()=>false)}
+function tileXY(lat,lon,z){let n=Math.pow(2,z);let x=Math.floor((lon+180)/360*n);let latRad=lat*Math.PI/180;let y=Math.floor((1-Math.log(Math.tan(latRad)+1/Math.cos(latRad))/Math.PI)/2*n);return{x,y}}
+async function showTileCacheInfo(){let n=await tileCount();let st=$('#tileDownloadStatus');if(st)st.textContent=n+' Kartendateien (Kacheln, Symbole, Schriften) aktuell lokal gespeichert.'}
+async function confirmClearTiles(){if(!confirm('Alle lokal gespeicherten Kartendaten löschen?'))return;await tileClearAll();let st=$('#tileDownloadStatus');if(st)st.textContent='Kartencache geleert.'}
+let ofmStyleMetaPromise=null;
+function getOfmStyleMeta(){
+ if(ofmStyleMetaPromise)return ofmStyleMetaPromise;
+ ofmStyleMetaPromise=fetch(OFM_STYLE_URL).then(r=>r.json()).then(style=>{
+  let srcKey=Object.keys(style.sources||{}).find(k=>style.sources[k].type==='vector');
+  let src=srcKey?style.sources[srcKey]:null;
+  return {tileTemplate:(src&&src.tiles&&src.tiles[0])||null, maxzoom:(src&&src.maxzoom)||14};
+ }).catch(()=>({tileTemplate:null,maxzoom:14}));
+ return ofmStyleMetaPromise;
+}
+async function downloadMapArea(){
+ let st=$('#tileDownloadStatus');
+ if(!liveMap){if(st)st.textContent='Bitte zuerst den Reiter „Live“ öffnen, damit die Karte geladen ist.';return;}
+ if(navigator.onLine===false){if(st)st.textContent='Kein Internet erkannt – Download jetzt nicht möglich.';return;}
+ let meta=await getOfmStyleMeta();
+ if(!meta.tileTemplate){if(st)st.textContent='Kartenanbieter-Adressen konnten nicht geladen werden. Bitte später erneut versuchen.';return;}
+ let zMax=meta.maxzoom;
+ let center=liveMap.getCenter();
+ let radiusM=parseFloat($('#tileDownloadRadius')?.value)||1500;
+ let dLat=radiusM/111320, dLon=radiusM/(111320*Math.cos(center.lat*Math.PI/180));
+ let latMin=center.lat-dLat,latMax=center.lat+dLat,lonMin=center.lng-dLon,lonMax=center.lng+dLon;
+ let tiles=[];
+ for(let z=Math.max(0,zMax-6);z<=zMax;z++){let tl=tileXY(latMax,lonMin,z),br=tileXY(latMin,lonMax,z);for(let x=tl.x;x<=br.x;x++)for(let y=tl.y;y<=br.y;y++)tiles.push({z,x,y});}
+ const MAX_TILES=1200;
+ if(tiles.length>MAX_TILES){if(st)st.textContent='Zu großer Bereich: '+tiles.length+' Kacheln angefragt, maximal '+MAX_TILES+' pro Durchgang erlaubt. Bitte Download-Radius verringern oder mehrfach in kleineren Schritten herunterladen.';return;}
+ if(!confirm('Es werden bis zu '+tiles.length+' Karten-Kacheln um die aktuelle Kartenmitte (Radius '+radiusM+' m) heruntergeladen. Fortfahren?'))return;
+ let done=0,failed=0;
+ if(st)st.textContent='Lade Kartendaten … 0/'+tiles.length;
+ for(const t of tiles){
+  let url=meta.tileTemplate.replace('{z}',t.z).replace('{x}',t.x).replace('{y}',t.y);
+  if(!(await tileGet(url))){
+   try{let r=await fetchTO(url,15000);if(r.ok)await tileSet(url,await r.arrayBuffer());else failed++;}catch(e){failed++;}
+   await new Promise(res=>setTimeout(res,120));
+  }
+  done++;
+  if(st)st.textContent='Lade Kartendaten … '+done+'/'+tiles.length+(failed?(' ('+failed+' fehlgeschlagen)'):'');
+ }
+ if(st)st.textContent='Fertig: '+(tiles.length-failed)+' von '+tiles.length+' Karten-Kacheln lokal gespeichert für Offline-Nutzung.'+(failed?(' '+failed+' fehlgeschlagen (Verbindung prüfen und ggf. erneut versuchen).'):'');
+}
+let liveMap=null, liveMarker=null;
+async function ensureLiveMap(){
+ const container=$('#liveMap');if(!container)return;
+ let st=$('#liveMapStatus');
+ try{await loadMapLibre();}catch(e){if(st)st.textContent='Karte konnte nicht geladen werden (kein Internet zum CDN). Track wird weiter unten als Schema-Grafik dargestellt.';return;}
+ if(liveMap){liveMap.resize();updateLiveMap(false);return;}
+ let last=(S.track||[]).slice(-1)[0];
+ let lat=last?.lat??S.weatherLat??51.3, lon=last?.lon??S.weatherLon??9.4;
+ liveMap=new maplibregl.Map({
+  container,
+  style:OFM_STYLE_URL,
+  center:[lon,lat],
+  zoom:last?16:11,
+  attributionControl:true,
+  transformRequest:(url,resourceType)=>{
+   if(resourceType==='Tile'&&url.startsWith('https://tiles.openfreemap.org/'))return {url:'ofc://'+encodeURIComponent(url)};
+  }
+ });
+ liveMap.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-left');
+ liveMap.on('load',()=>{
+  if(!liveMap.getSource('rhsTrack')){
+   liveMap.addSource('rhsTrack',{type:'geojson',data:{type:'Feature',geometry:{type:'LineString',coordinates:[]}}});
+   liveMap.addLayer({id:'rhsTrackLine',type:'line',source:'rhsTrack',paint:{'line-color':'#0f766e','line-width':4}});
+  }
+  updateLiveMap();
+ });
+ if(st)st.textContent=last?'':'Kein GPS-Punkt vorhanden – auf „Auf aktuellen Standort zentrieren“ tippen.';
+}
+function centerOnCurrentLocation(silent){
+ let st=$('#liveMapStatus');
+ if(!navigator.geolocation){if(!silent&&st)st.textContent='GPS nicht verfügbar.';return;}
+ navigator.geolocation.getCurrentPosition(p=>{
+  if(!liveMap)return;
+  liveMap.jumpTo({center:[p.coords.longitude,p.coords.latitude],zoom:16});
+  if(!(S.track||[]).length){if(liveMarker)liveMarker.setLngLat([p.coords.longitude,p.coords.latitude]);else liveMarker=new maplibregl.Marker({color:'#0f766e'}).setLngLat([p.coords.longitude,p.coords.latitude]).addTo(liveMap);}
+  if(st)st.textContent='Aktueller Standort: '+new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+ },e=>{if(!silent&&st)st.textContent='Aktueller Standort nicht verfügbar ('+(e&&e.message?e.message:'keine Freigabe')+').';},{enableHighAccuracy:true,timeout:15000,maximumAge:5000});
+}
+function updateLiveMap(center){
+ if(!liveMap||!liveMap.getSource||!liveMap.getSource('rhsTrack'))return;
+ let pts=(S.track||[]).map(p=>[p.lon,p.lat]);
+ liveMap.getSource('rhsTrack').setData({type:'Feature',geometry:{type:'LineString',coordinates:pts}});
+ if(pts.length){
+  let last=pts[pts.length-1];
+  if(liveMarker)liveMarker.setLngLat(last);else liveMarker=new maplibregl.Marker({color:'#0f766e'}).setLngLat(last).addTo(liveMap);
+  if(center!==false)liveMap.easeTo({center:last,zoom:Math.max(liveMap.getZoom(),16)});
+  let st=$('#liveMapStatus');if(st)st.textContent='Letzte Position: '+new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})+' · '+pts.length+' Punkte';
+ }
+}
+function fetchTO(url,ms=10000){const c=new AbortController();const t=setTimeout(()=>c.abort(),ms);return fetch(url,{signal:c.signal}).finally(()=>clearTimeout(t));}
+let watch=null;
+function gpsStart(){
+ if(!navigator.geolocation)return alert('GPS/Standort-API ist in diesem Browser nicht verfügbar.');
+ if(window.isSecureContext===false)return alert('GPS ist für diese Datei gesperrt, weil sie nicht über einen sicheren Kontext läuft (z. B. file://). Bitte die App über HTTPS/PWA öffnen.');
+ if(watch!=null)return;
+ watch=navigator.geolocation.watchPosition(p=>{S.track.push({t:new Date().toISOString(),lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy});save();drawTrack();updateLiveMap();},e=>{let m=e&&e.code===1?'Standortfreigabe verweigert.':e&&e.code===2?'Standort nicht verfügbar – GPS/Standortdienste prüfen.':e&&e.code===3?'GPS-Zeitüberschreitung – erneut versuchen.':'GPS-Fehler.';alert(m+(e&&e.message?'\n'+e.message:''));},{enableHighAccuracy:true,maximumAge:3000,timeout:20000});
+ S.trackRunning=true;save();stamp('GPS-Track gestartet');requestWakeLock();
+}
+function gpsStop(){if(watch!=null)navigator.geolocation.clearWatch(watch);watch=null;S.trackRunning=false;save();stamp('GPS-Track gestoppt');releaseWakeLock();}
+let wakeLock=null;
+function setWakeStatus(t){let e=$('#wakeLockStatus');if(e)e.textContent=t||'';}
+async function requestWakeLock(){
+ if(!('wakeLock' in navigator)){setWakeStatus('Bildschirm-Wachhalten wird von diesem Browser/Gerät nicht unterstützt. Bitte Anzeige während des Trackens manuell aktiv halten.');return;}
+ try{
+  wakeLock=await navigator.wakeLock.request('screen');
+  setWakeStatus('🔒 Bildschirm bleibt aktiv, solange getrackt wird.');
+  wakeLock.addEventListener('release',()=>{setWakeStatus('Bildschirm-Wachhalten pausiert (z. B. App im Hintergrund). Wird beim Zurückkehren automatisch erneut angefordert.');});
+ }catch(e){setWakeStatus('Bildschirm-Wachhalten konnte nicht aktiviert werden: '+(e.message||'unbekannter Fehler')+'. Bitte Anzeige manuell aktiv halten.');}
+}
+function releaseWakeLock(){try{wakeLock&&wakeLock.release();}catch(e){}wakeLock=null;setWakeStatus('');}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S.trackRunning)requestWakeLock();});
+function requireStartData(){
+ let ok=(S.startObs&&S.startObs.trim())||(S.plsArea&&S.plsArea.trim())||(S.chips?.startFactors||[]).length>0;
+ if(!ok){
+  alert('Bitte zuerst unter „Start“ Startanalyse/PLS-Angaben eintragen (z. B. Beobachtung am Start, Ansatzbereich oder Besonderheiten), bevor der Trail gestartet wird.');
+  let idx=[...$$('section[data-page]')].findIndex(s=>s.dataset.page==='Start');
+  if(idx>-1)show(idx);
+  return false;
+ }
+ return true;
+}
+function setTrackMode(v){S.trackMode=v;save();updateTrackModeUI();}
+function updateTrackModeUI(){
+ let v=S.trackMode||'gps';let box=$('#timeTrackBox');if(box)box.style.display=v==='time'?'flex':'none';
+ let sel=$('#trackMode');if(sel)sel.value=v;
+ let hint=$('#trackModeHint');if(hint)hint.textContent=v==='time'?'Zeitbasierter Track: Wegpunkte per Knopfdruck mit Uhrzeit erfassen, kein GPS nötig.':'GPS-Track: Position wird laufend automatisch aufgezeichnet.';
+ renderTimeTrack();
+}
+function startTracking(){
+ if(!requireStartData())return;
+ if((S.trackMode||'gps')==='time')timeTrackStart();else gpsStart();
+ stamp('Trail gestartet');
+}
+function stopTracking(){if((S.trackMode||'gps')==='time')timeTrackStop();else gpsStop();}
+let timeTrackTimer=null;
+function timeTrackStart(){
+ if(!S.searchStartAt)S.searchStartAt=new Date().toISOString();
+ S.trackRunning=true;save();
+ if(timeTrackTimer)clearInterval(timeTrackTimer);
+ timeTrackTimer=setInterval(updateClock,1000);updateClock();
+ stamp('Zeit-Track gestartet');requestWakeLock();
+}
+function timeTrackStop(){if(timeTrackTimer){clearInterval(timeTrackTimer);timeTrackTimer=null;}S.trackRunning=false;save();stamp('Zeit-Track gestoppt');releaseWakeLock();}
+function updateClock(){let c=$('#timeTrackClock');if(!c||!S.searchStartAt)return;let s=Math.max(0,Math.round((Date.now()-new Date(S.searchStartAt).getTime())/1000));c.textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+function addTimeWaypoint(){let note=prompt('Notiz zum Wegpunkt (optional):','')||'';let elapsed=S.searchStartAt?Math.round((Date.now()-new Date(S.searchStartAt).getTime())/1000):null;S.timeTrack=S.timeTrack||[];S.timeTrack.push({t:new Date().toISOString(),elapsedS:elapsed,note});save();renderTimeTrack();stamp('Zeitpunkt markiert',note);}
+function renderTimeTrack(){let e=$('#timeTrackList');if(!e)return;if((S.trackMode||'gps')!=='time'){e.innerHTML='';return;}e.innerHTML=(S.timeTrack||[]).map(p=>{let mm=p.elapsedS!=null?String(Math.floor(p.elapsedS/60)).padStart(2,'0')+':'+String(p.elapsedS%60).padStart(2,'0'):'–';return `<div class="event">${mm} · ${new Date(p.t).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}${p.note?' · '+esc(p.note):''}</div>`;}).join('')||'<p class="muted">Noch keine Zeit-Wegpunkte.</p>';}
+function resumeTracking(){if((S.trackMode||'gps')==='time'&&S.trackRunning){if(timeTrackTimer)clearInterval(timeTrackTimer);timeTrackTimer=setInterval(updateClock,1000);updateClock();requestWakeLock();}}
+async function weatherDiagnose(){let st=$('#weatherStatus');let lines=[];lines.push('Sicherer Kontext (https/localhost): '+(window.isSecureContext?'ja':'NEIN – lokale Datei / kein sicherer Kontext; GPS kann blockiert sein'));lines.push('Geolocation-API vorhanden: '+(navigator.geolocation?'ja':'nein'));lines.push('Online-Status: '+(navigator.onLine===false?'kein Internet erkannt':'Internet erkannt'));try{let r=await fetchTO('https://api.open-meteo.com/v1/forecast?latitude=51.3&longitude=9.4&current=temperature_2m',6000);lines.push('Testabruf Wetterdienst: '+(r.ok?'erfolgreich':'fehlgeschlagen (HTTP '+r.status+')'));}catch(e){lines.push('Testabruf Wetterdienst: fehlgeschlagen ('+(e.name==='AbortError'?'Zeitüberschreitung':e.message)+')');}if(st)st.innerHTML=lines.map(esc).join('<br>');}
+function parseTrackText(text,name){
+ let pts=[]; if(name.toLowerCase().endsWith('.gpx')){let xml=new DOMParser().parseFromString(text,'text/xml');[...xml.querySelectorAll('trkpt,rtept,wpt')].forEach(p=>{let lat=+p.getAttribute('lat'),lon=+p.getAttribute('lon');if(Number.isFinite(lat)&&Number.isFinite(lon))pts.push({lat,lon})});}
+ else if(name.toLowerCase().endsWith('.kml')){let xml=new DOMParser().parseFromString(text,'text/xml');[...xml.querySelectorAll('coordinates')].forEach(n=>n.textContent.trim().split(/\s+/).forEach(q=>{let [lon,lat]=q.split(',').map(Number);if(Number.isFinite(lat)&&Number.isFinite(lon))pts.push({lat,lon})}));}
+ else {let o=JSON.parse(text),a=Array.isArray(o)?o:(o.track||o.points||o.state?.track||[]);a.forEach(p=>{let lat=+(p.lat??p.latitude),lon=+(p.lon??p.lng??p.longitude);if(Number.isFinite(lat)&&Number.isFinite(lon))pts.push({lat,lon,t:p.t||p.time||null})});}
+ return pts;
+}
+function importTrackFile(inp,kind){let f=inp.files[0];if(!f)return;let r=new FileReader;r.onload=()=>{try{let pts=parseTrackText(r.result,f.name);if(pts.length<2)throw Error('Keine verwertbaren Trackpunkte');if(kind==='reference')S.referenceTrack=pts;else S.dogTrack=pts;save();drawTrack();$('#trackStatus').textContent=(kind==='reference'?'Spurleger':'Hund')+': '+pts.length+' Trackpunkte geladen.';}catch(e){alert('Track konnte nicht gelesen werden: '+e.message)}};r.readAsText(f);inp.value=''}
+let overlay={img:null,opacity:.45,scale:1,x:0,y:0};
+function loadTrackOverlay(inp){let f=inp.files[0];if(!f)return;let r=new FileReader;r.onload=()=>{let im=new Image();im.onload=()=>{overlay.img=im;$('#overlayControls').style.display='grid';drawTrack();$('#trackStatus').textContent='Hundetrack-Screenshot geladen. Bitte mit Größe/Verschiebung auf die Trackdarstellung ausrichten. Screenshot wird aus Speichergründen nur für diese Sitzung gehalten.'};im.src=r.result};r.readAsDataURL(f);inp.value=''}
+function setRefMode(v){S.refMode=v;save();drawTrack()}
+function clearTrackExtras(){if(!confirm('Spurleger-, Hundetrack und Screenshot aus diesem Vorgang entfernen?'))return;S.referenceTrack=[];S.dogTrack=[];overlay.img=null;save();drawTrack()}
+function hav(a,b){let R=6371000,rad=Math.PI/180,dla=(b.lat-a.lat)*rad,dlo=(b.lon-a.lon)*rad,la1=a.lat*rad,la2=b.lat*rad;let q=Math.sin(dla/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dlo/2)**2;return 2*R*Math.asin(Math.sqrt(q))}
+function nearestDist(p,line){let m=Infinity;for(let q of line)m=Math.min(m,hav(p,q));return m}
+function trackStats(){let ref=S.referenceTrack||[],actual=(S.dogTrack?.length?S.dogTrack:S.track)||[];if(ref.length<2||actual.length<2)return '';let ds=actual.map(p=>nearestDist(p,ref)).filter(Number.isFinite);if(!ds.length)return '';let avg=ds.reduce((a,b)=>a+b,0)/ds.length,max=Math.max(...ds);return `Geometrischer Vergleich: mittlere Punktnähe ca. ${avg.toFixed(0)} m, größte Punktnähe ca. ${max.toFixed(0)} m. <b>Nicht als Leistungsnote verwenden</b>; Wind, Bebauung und Geruchsverlagerung können sinnvolle Abweichungen verursachen.`}
+function drawTrack(){let c=$('#track');if(!c)return;let d=devicePixelRatio||1,w=c.clientWidth*d,h=320*d;c.width=w;c.height=h;let x=c.getContext('2d');x.clearRect(0,0,w,h);if(overlay.img){x.save();x.globalAlpha=overlay.opacity;let iw=w*overlay.scale,ih=iw*(overlay.img.height/overlay.img.width);x.drawImage(overlay.img,(w-iw)/2+overlay.x*w/2,(h-ih)/2+overlay.y*h/2,iw,ih);x.restore()}
+ let showRef=S.refMode!=='blind'||S.trailEnded, view=S.trackView||'all';let sets=[];if(showRef&&['all','refhf','refdog'].includes(view)&&(S.referenceTrack||[]).length)sets.push({a:S.referenceTrack,color:'#dc2626',name:'Spurleger'});if(['all','refhf','hf'].includes(view)&&(S.track||[]).length)sets.push({a:S.track,color:'#0f766e',name:'Hundeführer'});if(['all','refdog'].includes(view)&&(S.dogTrack||[]).length)sets.push({a:S.dogTrack,color:'#2563eb',name:'Hund'});
+ let all=sets.flatMap(z=>z.a);if(all.length<2){x.fillStyle='#444';x.font=`${13*d}px sans-serif`;x.fillText(showRef?'Noch nicht genügend Trackpunkte':'Blindmodus: Referenztrack bis Trailende verborgen',15*d,25*d);$('#trackCompare').innerHTML='';return}let lats=all.map(p=>p.lat),lons=all.map(p=>p.lon),miA=Math.min(...lats),maA=Math.max(...lats),miO=Math.min(...lons),maO=Math.max(...lons),pad=24*d;let px=p=>pad+(p.lon-miO)/(maO-miO||1)*(w-2*pad),py=p=>h-pad-(p.lat-miA)/(maA-miA||1)*(h-2*pad);sets.forEach(z=>{x.beginPath();x.strokeStyle=z.color;x.lineWidth=3*d;z.a.forEach((p,i)=>i?x.lineTo(px(p),py(p)):x.moveTo(px(p),py(p)));x.stroke()});$('#trackCompare').innerHTML=showRef?trackStats():'Referenztrack ist im Blindmodus gespeichert, aber während des Trails nicht sichtbar.';}
+function modeChanged(){S.mode=document.querySelector('[data-k="mode"]')?.value||S.mode||'Training';save();applyMode()}
+function applyMode(){let m=S.mode||'Training';$$('.training-only').forEach(e=>e.style.display=(m==='Training'||m==='Prüfung')?'':'none');$$('.deployment-only').forEach(e=>e.style.display=m==='Einsatz'?'':'none');$$('.exam-only').forEach(e=>e.style.display=m==='Prüfung'?'':'none')}
+function applyExamPreset(v){S.examPreset=v;if(v==='drk'){Object.assign(S,{examRule:'DRK 2024',examMinutes:'60',examLength:'1500–1800',examAge:'12–30 h',examPLSMinutes:'20'});}else if(v==='iro'){let l=S.examLevel||'A',m={V:{min:'20',len:'500',age:'60 min'},A:{min:'45',len:'1000',age:'4 h'},B:{min:'60',len:'2000',age:'6 h'}}[l]||{};Object.assign(S,{examRule:'FCI/IRO 2025 · RH-MT '+l,examMinutes:m.min,examLength:m.len,examAge:m.age,examPLSMinutes:''});}bind();save()}function rememberExamSettings(on){try{if(on)localStorage.setItem(KEY+':exam-defaults',JSON.stringify({examPreset:S.examPreset,examRule:S.examRule,examLevel:S.examLevel,examMinutes:S.examMinutes,examLength:S.examLength,examAge:S.examAge,examPLSMinutes:S.examPLSMinutes}));else localStorage.removeItem(KEY+':exam-defaults')}catch(e){}}function loadExamDefaults(){try{let d=JSON.parse(localStorage.getItem(KEY+':exam-defaults')||'null');if(d){for(const [k,v] of Object.entries(d))if(S[k]==null||S[k]==='')S[k]=v;let c=$('#rememberExam');if(c)c.checked=true}}catch(e){}}
+function examPresetPayload(){let data={};['examRule','examLevel','examMinutes','examLength','examAge','examPLSMinutes'].forEach(k=>data[k]=S[k]??'');return{format:'rhs-exam-preset',schemaVersion:1,discipline:'mantrailing',createdAt:new Date().toISOString(),data}}
+function saveExamPresetFile(){let p=examPresetPayload(),blob=new Blob([JSON.stringify(p,null,2)],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='RHS_Pruefungsvorgaben_mantrailing_'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(u)}
+function importExamPresetFile(inp){let f=inp.files&&inp.files[0];inp.value='';if(!f)return;let r=new FileReader();r.onload=()=>{try{let p=JSON.parse(r.result);if(p.format!=='rhs-exam-preset'||Number(p.schemaVersion)!==1)throw Error('Keine gültige RHS-Prüfungsvorlage.');if(p.discipline!=='mantrailing')throw Error('Diese Vorlage gehört zur Sparte '+p.discipline+'.');for(const k of ['examRule','examLevel','examMinutes','examLength','examAge','examPLSMinutes'])if(p.data&&p.data[k]!==undefined)S[k]=p.data[k];S.examPreset='custom';bind();save();alert('Prüfungsvorgaben übernommen. Alle Werte bleiben änderbar.')}catch(e){alert(e.message||'Vorlage konnte nicht gelesen werden.')}};r.readAsText(f)}
+async function requestWeather(lat,lon,label){
+ let st=$('#weatherStatus');
+ try{
+  if(navigator.onLine===false)throw new Error('Kein Internet erkannt.');
+  if(st)st.textContent='Wetterdaten werden online abgerufen (DWD ICON via Open-Meteo) …';
+  const params=new URLSearchParams({latitude:String(lat),longitude:String(lon),models:'icon_seamless',current:'temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m',timezone:'auto'});
+  let r=await fetchTO(`https://api.open-meteo.com/v1/forecast?${params}`);
+  if(!r.ok)throw new Error('Wetterdienst nicht erreichbar.');
+  let j=await r.json(),w=j.current||{};
+  Object.assign(S,{weatherAt:new Date().toISOString(),weatherLat:lat,weatherLon:lon,wxTemp:w.temperature_2m??'',wxHumidity:w.relative_humidity_2m??'',wxWindDir:w.wind_direction_10m??'',wxWind:w.wind_speed_10m??'',wxGust:w.wind_gusts_10m??'',wxPrecip:w.precipitation??'',wxCode:w.weather_code??''});
+  save();bind();
+  if(st)st.textContent='Wetter übernommen'+(label?' · '+label:'')+' · '+new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+  stamp('Wetter am Startpunkt erfasst');
+  return true;
+ }catch(e){if(st)st.textContent='Wetterabruf fehlgeschlagen: '+(e.message||'unbekannter Fehler')+' Manuelle Eingabe bleibt möglich.';return false;}
+}
+function fetchWeather(){
+ let st=$('#weatherStatus');if(st)st.textContent='Standort wird ermittelt …';
+ if(!navigator.geolocation){if(st)st.textContent='GPS/Standort-API ist in diesem Browser nicht verfügbar. Bitte Ort/PLZ verwenden.';return;}
+ if(window.isSecureContext===false){if(st)st.textContent='GPS ist für diese Datei gesperrt, weil sie nicht über HTTPS/PWA läuft. Bitte die App über HTTPS öffnen oder Ort/PLZ verwenden.';return;}
+ navigator.geolocation.getCurrentPosition(p=>requestWeather(p.coords.latitude,p.coords.longitude,'GPS-Standort'),e=>{let c=e&&e.code;let m=c===1?'Standortfreigabe verweigert':c===2?'Standort nicht verfügbar':c===3?'Zeitüberschreitung beim GPS':'GPS-Fehler';if(st)st.textContent=m+' ('+(e&&e.message?e.message:'unbekannt')+'). Bitte Ort/PLZ verwenden.';},{enableHighAccuracy:true,timeout:15000,maximumAge:30000});
+}
+async function fetchWeatherByPlace(){
+ let st=$('#weatherStatus'),el=$('#weatherPlace'),raw=(el&&el.value||'').trim();
+ if(!raw){if(st)st.textContent='Bitte Ort oder PLZ eingeben.';return;}
+ try{
+  if(navigator.onLine===false)throw new Error('Kein Internet erkannt.');
+  if(st)st.textContent='Ort wird gesucht …';
+  let candidates=[];
+  let zip=(raw.match(/\b\d{5}\b/)||[])[0];
+  let place=raw.replace(/\b\d{5}\b/g,' ').replace(/[,;]/g,' ').replace(/\s+/g,' ').trim();
+  if(zip)candidates.push(zip); if(place)candidates.push(place); candidates.push(raw);
+  let seen=new Set(),found=null;
+  for(const q of candidates){if(!q||seen.has(q.toLowerCase()))continue;seen.add(q.toLowerCase());const u='https://geocoding-api.open-meteo.com/v1/search?'+new URLSearchParams({name:q,count:'10',language:'de',format:'json',countryCode:'DE'});let r=await fetchTO(u);if(!r.ok)continue;let j=await r.json(),a=j.results||[];if(zip){let exact=a.find(x=>String(x.postcodes||'').includes(zip)||String(x.postcode||'')===zip);if(exact){found=exact;break;}}if(a.length){found=a[0];break;}}
+  if(!found)throw new Error('Ort/PLZ wurde nicht gefunden.');
+  await requestWeather(found.latitude,found.longitude,[found.name,found.admin1].filter(Boolean).join(', '));
+ }catch(e){if(st)st.textContent='Ortssuche/Wetter fehlgeschlagen: '+(e.message||'unbekannter Fehler')+' Bitte Internet prüfen oder Werte manuell eintragen.';}
+}
+function exportDeployment(){if((S.mode||'Training')!=='Einsatz')return alert('Die Übergabe an das Einsatzprotokoll ist nur im Modus Einsatz vorgesehen.');const pkg={bridgeFormat:'rhs-search-assistant-deployment',schemaVersion:1,discipline:'Mantrailing',createdAt:new Date().toISOString(),sourceApp:'rh-mantrailing-assistent',state:S};let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(pkg,null,2)],{type:'application/json'}));a.download='RHS_Einsatz_Mantrailing_'+new Date().toISOString().slice(0,10)+'.json';a.click()}
+function newCase(){if(!confirm('Neuen Vorgang starten?'))return;let sichern=confirm('Aktuellen Vorgang vorher als JSON sichern? OK = sichern, Abbrechen = ohne Sicherung fortfahren.');if(sichern)backup();let keep={team:S.team||''};S={version:3,mode:'Training',createdAt:new Date().toISOString(),events:[],track:[],finds:[],referenceTrack:[],dogTrack:[],refMode:'blind',trackView:'all',trailEnded:false,trackMode:'gps',timeTrack:[],searchStartAt:null,trackRunning:false,...keep};loadExamDefaults();save();location.reload()}
+function exportTraining(){const pkg={bridgeFormat:'rhs-mantrailing-assistent-export',schemaVersion:1,createdAt:new Date().toISOString(),sourceApp:'rh-mantrailing-assistent',state:S};let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(pkg,null,2)],{type:'application/json'}));a.download='RHS_Mantrailing_Training_'+new Date().toISOString().slice(0,10)+'.json';a.click();}
+function backup(){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify({format:'rhs-mantrailing-assistent-backup',version:1,state:S},null,2)],{type:'application/json'}));a.download=KEY+'_'+new Date().toISOString().slice(0,10)+'.json';a.click();}
+function restore(inp){let f=inp.files[0];if(!f)return;let r=new FileReader;r.onload=()=>{try{let o=JSON.parse(r.result);if(o.format!=='rhs-mantrailing-assistent-backup'||!o.state)throw new Error('Falsches Backup-Format');o=o.state;if(!confirm('Lokale Daten durch diese Sicherung ersetzen?'))return;S=o;if(save())location.reload();else setSaveStatus('Sicherung gelesen, aber localStorage konnte nicht geschrieben werden. Stand bleibt geöffnet; bitte JSON sichern.',true)}catch(e){alert('Ungültige JSON-Datei')}};r.readAsText(f)}
+function resetAll(){newCase()}
+function protocol(){window.print()}
+
+function calcMT(){
+ let out=['Hund am Start möglichst selbstständig die Geruchslage ausarbeiten lassen; körpersprachliche Vorwegnahme vermeiden.'];
+ if(S.traffic==='hoch'||S.traffic==='sehr hoch')out.push('Hohe Frequentierung: Kreuzungen und Fremdgerüche als mögliche Entscheidungsstellen markieren; nicht allein die geometrische Weglinie bewerten.');
+ if(S.wind==='stark'||S.wind==='wechselnd')out.push('Wind/Bebauung können Geruch seitlich verlagern oder verwirbeln; Hundetrack muss nicht auf dem tatsächlichen Fußweg liegen.');
+ if((S.chips?.startFactors||[]).includes('Fahrzeug möglich')||(S.chips?.startFactors||[]).includes('ÖPNV möglich'))out.push('Trailabriss durch Fahrzeug/ÖPNV als eigene Hypothese dokumentieren; nicht automatisch als Fehlleistung werten.');
+ if(S.saCont==='bekannt kontaminiert'||S.saCont==='unklar')out.push('Referenzgeruch ist nicht eindeutig sauber: Kontamination in Interpretation und Übergabe ausdrücklich mitführen.');
+ $('#mtAdvice').innerHTML='<b>Arbeitsfokus</b><br>'+out.map(esc).join('<br>');
+}
+function initApp(){calcMT();applyMode();let m=$('#refMode'),v=$('#trackView');if(m)m.value=S.refMode||'blind';if(v)v.value=S.trackView||'all';updateTrackModeUI();resumeTracking();}
+
+function refreshFromRecovered(){ $$('.chip').forEach(b=>b.classList.remove('on')); bind();loadChips();renderEvents();drawTrack();if(typeof initApp==='function')initApp(); }
+pages();bind();loadChips();renderEvents();drawTrack();if(typeof initApp==='function')initApp();idbRecoverNewest(ok=>{if(ok)refreshFromRecovered()});
+
+if('serviceWorker' in navigator && window.isSecureContext){
+ window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});
+}
+</script></body></html>
