@@ -1,17 +1,29 @@
 {
-  "name": "RH Mantrailing-Assistent",
-  "short_name": "Mantrailing",
-  "description": "Geruchsartikel · Startanalyse · Trailentscheidungen · GPS · schlanke Übergabe · offline-first",
+  "name": "RH-Mantrailing-Assistent",
+  "short_name": "RH-Mantrailing",
+  "lang": "de",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait-primary",
-  "background_color": "#f5f5f4",
-  "theme_color": "#0f766e",
-  "lang": "de",
+  "orientation": "any",
+  "background_color": "#f4f2f8",
+  "theme_color": "#4b3a7a",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }

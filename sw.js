@@ -1,52 +1,12 @@
-// RH Mantrailing-Assistent – Service Worker
-// Cacht nur die App-Hülle (HTML/Manifest/Icons), damit die App auch ohne
-// Internet startet. Wetterdaten, Kartenkacheln und die MapLibre-Bibliothek
-// werden weiterhin ganz normal live aus dem Netz geladen, wenn online.
-
-const CACHE = 'rh-mantrailing-shell-v1';
-const SHELL = [
-  './',
-  './index.html',
-  './manifest.webmanifest',
-  './icon-192.png',
-  './icon-512.png',
-  './icon-512-maskable.png'
-];
-
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting())
-  );
-});
-
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-    ).then(() => self.clients.claim())
-  );
-});
-
-self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
-
-  // Nur eigene Dateien (gleicher Ursprung) aus dem Cache bedienen.
-  // Alles andere (Wetter-API, Kartenkacheln, MapLibre-CDN) unangetastet
-  // ans Netz durchreichen – dafür braucht die App ohnehin Internet.
-  if (url.origin !== self.location.origin) return;
-
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const network = fetch(event.request)
-        .then((resp) => {
-          if (resp && resp.ok) {
-            const copy = resp.clone();
-            caches.open(CACHE).then((cache) => cache.put(event.request, copy));
-          }
-          return resp;
-        })
-        .catch(() => cached);
-      return cached || network;
-    })
-  );
+/* RH-Mantrailing-Assistent – Service Worker: startet die App auch ohne Internet (z. B. im Funkloch).
+   Die Daten liegen im lokalen Gerätespeicher, nicht in diesem Cache.
+   Bei jeder neuen Version CACHE_VERSION erhöhen. */
+const CACHE_VERSION = 'mantrailing-2.1.2';
+const DATEIEN = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'];
+self.addEventListener('install', e=>{ e.waitUntil(caches.open(CACHE_VERSION).then(c=>c.addAll(DATEIEN)).then(()=>self.skipWaiting())); });
+self.addEventListener('activate', e=>{ e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==CACHE_VERSION).map(x=>caches.delete(x)))).then(()=>self.clients.claim())); });
+self.addEventListener('fetch', e=>{
+  if(e.request.method!=='GET' || new URL(e.request.url).origin!==location.origin) return;
+  e.respondWith(fetch(e.request).then(r=>{ const k=r.clone(); caches.open(CACHE_VERSION).then(c=>c.put(e.request,k)); return r; })
+    .catch(()=>caches.match(e.request).then(r=>r||caches.match('./index.html'))));
 });
