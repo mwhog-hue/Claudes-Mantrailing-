@@ -1,14 +1,6 @@
 <!doctype html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>RH Mantrailing-Assistent · v2.1</title>
-<link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#0f766e">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Mantrailing">
-<link rel="icon" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-192.png">
 <style>
 :root{--a:#0f766e;--bg:#f5f5f4;--card:#fff;--ink:#1c1917;--mut:#6b7280;--line:#d6d3d1}
 *{box-sizing:border-box}body{margin:0;font:15px system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--ink)}
@@ -103,7 +95,7 @@ label{display:block;font-size:12px;color:#57534e}input,select,textarea{width:100
 <label>Endpool-Verhalten / Anzeige / genaue Auffindesituation<textarea data-k="endPoolNotes" rows="4" placeholder="Geruchsverteilung, Suchverhalten, Annäherung, Anzeige, Position und Zustand der VP"></textarea></label>
 <label>Kurze Meldung an Einsatz-/Polizeiführung<textarea data-k="radio" rows="3" placeholder="Team, Ergebnis, Fund-/Endpunkt, ggf. Zustand/weitere Kräfte"></textarea></label>
 <p class="muted">Der Funk-/Übergabebereich ist bewusst schlank gehalten, da beim Mantrailing häufig Polizei oder weitere Einsatzkräfte unmittelbar begleiten.</p>
-<label>Nachbesprechung / nächster Trainingspunkt<textarea data-k="debrief" rows="4"></textarea></label><div class="row noprint"><button class="btn" onclick="protocol()">Drucken / PDF</button><button class="btn training-only" onclick="exportTraining()">Für MT-Tagebuch exportieren</button><button class="btn deployment-only" onclick="exportDeployment()">An Einsatzprotokoll übergeben</button><button class="btn" onclick="backup()">JSON-Sicherung</button><label class="btn">Sicherung laden<input hidden type="file" accept=".json" onchange="restore(this)"></label><button class="btn" onclick="resetAll()">Neuer Vorgang</button></div></div></section>
+<label>Nachbesprechung / nächster Trainingspunkt<textarea data-k="debrief" rows="4"></textarea></label><div class="row noprint"><button class="btn" onclick="protocol()">Drucken / PDF</button><button class="btn training-only" onclick="exportTraining()">Für MT-Tagebuch exportieren</button><button class="btn deployment-only" onclick="exportDeployment()">An Einsatzprotokoll übergeben</button><button class="btn" onclick="rhsTeamExport()">Teamdaten exportieren</button><label class="btn">Teamdaten importieren<input hidden type="file" accept=".json,application/json" onchange="rhsTeamImport(this)"></label><button class="btn" onclick="backup()">JSON-Sicherung</button><label class="btn">Sicherung laden<input hidden type="file" accept=".json" onchange="restore(this)"></label><button class="btn" onclick="resetAll()">Neuer Vorgang</button></div><p id="rhsTeamInfo" style="font-size:.85em;opacity:.8;margin:6px 0 0"></p></div></section>
 </main>
 <script>
 const KEY="rhs-mantrailing-assistent-v1", $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
@@ -244,10 +236,10 @@ function updateLiveMap(center){
 function fetchTO(url,ms=10000){const c=new AbortController();const t=setTimeout(()=>c.abort(),ms);return fetch(url,{signal:c.signal}).finally(()=>clearTimeout(t));}
 let watch=null;
 function gpsStart(){
- if(!navigator.geolocation)return alert('GPS/Standort-API ist in diesem Browser nicht verfügbar.');
- if(window.isSecureContext===false)return alert('GPS ist für diese Datei gesperrt, weil sie nicht über einen sicheren Kontext läuft (z. B. file://). Bitte die App über HTTPS/PWA öffnen.');
+ if(!window.isSecureContext){alert('GPS ist auf diesem Gerät für lokal geöffnete Dateien gesperrt (kein sicherer Kontext/HTTPS). Bitte Trackmodus „Nur Zeit“ verwenden oder die Datei über eine https-Adresse öffnen.');return;}
+ if(!navigator.geolocation)return alert('GPS nicht verfügbar.');
  if(watch!=null)return;
- watch=navigator.geolocation.watchPosition(p=>{S.track.push({t:new Date().toISOString(),lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy});save();drawTrack();updateLiveMap();},e=>{let m=e&&e.code===1?'Standortfreigabe verweigert.':e&&e.code===2?'Standort nicht verfügbar – GPS/Standortdienste prüfen.':e&&e.code===3?'GPS-Zeitüberschreitung – erneut versuchen.':'GPS-Fehler.';alert(m+(e&&e.message?'\n'+e.message:''));},{enableHighAccuracy:true,maximumAge:3000,timeout:20000});
+ watch=navigator.geolocation.watchPosition(p=>{S.track.push({t:new Date().toISOString(),lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy});save();drawTrack();updateLiveMap();},e=>alert('GPS: '+e.message),{enableHighAccuracy:true,maximumAge:3000,timeout:15000});
  S.trackRunning=true;save();stamp('GPS-Track gestartet');requestWakeLock();
 }
 function gpsStop(){if(watch!=null)navigator.geolocation.clearWatch(watch);watch=null;S.trackRunning=false;save();stamp('GPS-Track gestoppt');releaseWakeLock();}
@@ -299,7 +291,7 @@ function updateClock(){let c=$('#timeTrackClock');if(!c||!S.searchStartAt)return
 function addTimeWaypoint(){let note=prompt('Notiz zum Wegpunkt (optional):','')||'';let elapsed=S.searchStartAt?Math.round((Date.now()-new Date(S.searchStartAt).getTime())/1000):null;S.timeTrack=S.timeTrack||[];S.timeTrack.push({t:new Date().toISOString(),elapsedS:elapsed,note});save();renderTimeTrack();stamp('Zeitpunkt markiert',note);}
 function renderTimeTrack(){let e=$('#timeTrackList');if(!e)return;if((S.trackMode||'gps')!=='time'){e.innerHTML='';return;}e.innerHTML=(S.timeTrack||[]).map(p=>{let mm=p.elapsedS!=null?String(Math.floor(p.elapsedS/60)).padStart(2,'0')+':'+String(p.elapsedS%60).padStart(2,'0'):'–';return `<div class="event">${mm} · ${new Date(p.t).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}${p.note?' · '+esc(p.note):''}</div>`;}).join('')||'<p class="muted">Noch keine Zeit-Wegpunkte.</p>';}
 function resumeTracking(){if((S.trackMode||'gps')==='time'&&S.trackRunning){if(timeTrackTimer)clearInterval(timeTrackTimer);timeTrackTimer=setInterval(updateClock,1000);updateClock();requestWakeLock();}}
-async function weatherDiagnose(){let st=$('#weatherStatus');let lines=[];lines.push('Sicherer Kontext (https/localhost): '+(window.isSecureContext?'ja':'NEIN – lokale Datei / kein sicherer Kontext; GPS kann blockiert sein'));lines.push('Geolocation-API vorhanden: '+(navigator.geolocation?'ja':'nein'));lines.push('Online-Status: '+(navigator.onLine===false?'kein Internet erkannt':'Internet erkannt'));try{let r=await fetchTO('https://api.open-meteo.com/v1/forecast?latitude=51.3&longitude=9.4&current=temperature_2m',6000);lines.push('Testabruf Wetterdienst: '+(r.ok?'erfolgreich':'fehlgeschlagen (HTTP '+r.status+')'));}catch(e){lines.push('Testabruf Wetterdienst: fehlgeschlagen ('+(e.name==='AbortError'?'Zeitüberschreitung':e.message)+')');}if(st)st.innerHTML=lines.map(esc).join('<br>');}
+async function weatherDiagnose(){let st=$('#weatherStatus');let lines=[];lines.push('Sicherer Kontext (https/localhost): '+(window.isSecureContext?'ja':'NEIN – GPS/Standortabruf wird vom Browser blockiert'));lines.push('Geolocation-API vorhanden: '+(navigator.geolocation?'ja':'nein'));lines.push('Online-Status: '+(navigator.onLine===false?'kein Internet erkannt':'Internet erkannt'));try{let r=await fetchTO('https://api.open-meteo.com/v1/forecast?latitude=51.3&longitude=9.4&current=temperature_2m',6000);lines.push('Testabruf Wetterdienst: '+(r.ok?'erfolgreich':'fehlgeschlagen (HTTP '+r.status+')'));}catch(e){lines.push('Testabruf Wetterdienst: fehlgeschlagen ('+(e.name==='AbortError'?'Zeitüberschreitung':e.message)+')');}if(st)st.innerHTML=lines.map(esc).join('<br>');}
 function parseTrackText(text,name){
  let pts=[]; if(name.toLowerCase().endsWith('.gpx')){let xml=new DOMParser().parseFromString(text,'text/xml');[...xml.querySelectorAll('trkpt,rtept,wpt')].forEach(p=>{let lat=+p.getAttribute('lat'),lon=+p.getAttribute('lon');if(Number.isFinite(lat)&&Number.isFinite(lon))pts.push({lat,lon})});}
  else if(name.toLowerCase().endsWith('.kml')){let xml=new DOMParser().parseFromString(text,'text/xml');[...xml.querySelectorAll('coordinates')].forEach(n=>n.textContent.trim().split(/\s+/).forEach(q=>{let [lon,lat]=q.split(',').map(Number);if(Number.isFinite(lat)&&Number.isFinite(lon))pts.push({lat,lon})}));}
@@ -321,7 +313,7 @@ function modeChanged(){S.mode=document.querySelector('[data-k="mode"]')?.value||
 function applyMode(){let m=S.mode||'Training';$$('.training-only').forEach(e=>e.style.display=(m==='Training'||m==='Prüfung')?'':'none');$$('.deployment-only').forEach(e=>e.style.display=m==='Einsatz'?'':'none');$$('.exam-only').forEach(e=>e.style.display=m==='Prüfung'?'':'none')}
 function applyExamPreset(v){S.examPreset=v;if(v==='drk'){Object.assign(S,{examRule:'DRK 2024',examMinutes:'60',examLength:'1500–1800',examAge:'12–30 h',examPLSMinutes:'20'});}else if(v==='iro'){let l=S.examLevel||'A',m={V:{min:'20',len:'500',age:'60 min'},A:{min:'45',len:'1000',age:'4 h'},B:{min:'60',len:'2000',age:'6 h'}}[l]||{};Object.assign(S,{examRule:'FCI/IRO 2025 · RH-MT '+l,examMinutes:m.min,examLength:m.len,examAge:m.age,examPLSMinutes:''});}bind();save()}function rememberExamSettings(on){try{if(on)localStorage.setItem(KEY+':exam-defaults',JSON.stringify({examPreset:S.examPreset,examRule:S.examRule,examLevel:S.examLevel,examMinutes:S.examMinutes,examLength:S.examLength,examAge:S.examAge,examPLSMinutes:S.examPLSMinutes}));else localStorage.removeItem(KEY+':exam-defaults')}catch(e){}}function loadExamDefaults(){try{let d=JSON.parse(localStorage.getItem(KEY+':exam-defaults')||'null');if(d){for(const [k,v] of Object.entries(d))if(S[k]==null||S[k]==='')S[k]=v;let c=$('#rememberExam');if(c)c.checked=true}}catch(e){}}
 function examPresetPayload(){let data={};['examRule','examLevel','examMinutes','examLength','examAge','examPLSMinutes'].forEach(k=>data[k]=S[k]??'');return{format:'rhs-exam-preset',schemaVersion:1,discipline:'mantrailing',createdAt:new Date().toISOString(),data}}
-function saveExamPresetFile(){let p=examPresetPayload(),blob=new Blob([JSON.stringify(p,null,2)],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='RHS_Pruefungsvorgaben_mantrailing_'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(u)}
+function saveExamPresetFile(){let p=examPresetPayload(),blob=new Blob([JSON.stringify(p,null,2)],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='RHS_Pruefungsvorgaben_mantrailing_'+new Date().toISOString().slice(0,10)+'.json';rhsLadeHerunter(a);URL.revokeObjectURL(u)}
 function importExamPresetFile(inp){let f=inp.files&&inp.files[0];inp.value='';if(!f)return;let r=new FileReader();r.onload=()=>{try{let p=JSON.parse(r.result);if(p.format!=='rhs-exam-preset'||Number(p.schemaVersion)!==1)throw Error('Keine gültige RHS-Prüfungsvorlage.');if(p.discipline!=='mantrailing')throw Error('Diese Vorlage gehört zur Sparte '+p.discipline+'.');for(const k of ['examRule','examLevel','examMinutes','examLength','examAge','examPLSMinutes'])if(p.data&&p.data[k]!==undefined)S[k]=p.data[k];S.examPreset='custom';bind();save();alert('Prüfungsvorgaben übernommen. Alle Werte bleiben änderbar.')}catch(e){alert(e.message||'Vorlage konnte nicht gelesen werden.')}};r.readAsText(f)}
 async function requestWeather(lat,lon,label){
  let st=$('#weatherStatus');
@@ -341,9 +333,9 @@ async function requestWeather(lat,lon,label){
 }
 function fetchWeather(){
  let st=$('#weatherStatus');if(st)st.textContent='Standort wird ermittelt …';
- if(!navigator.geolocation){if(st)st.textContent='GPS/Standort-API ist in diesem Browser nicht verfügbar. Bitte Ort/PLZ verwenden.';return;}
- if(window.isSecureContext===false){if(st)st.textContent='GPS ist für diese Datei gesperrt, weil sie nicht über HTTPS/PWA läuft. Bitte die App über HTTPS öffnen oder Ort/PLZ verwenden.';return;}
- navigator.geolocation.getCurrentPosition(p=>requestWeather(p.coords.latitude,p.coords.longitude,'GPS-Standort'),e=>{let c=e&&e.code;let m=c===1?'Standortfreigabe verweigert':c===2?'Standort nicht verfügbar':c===3?'Zeitüberschreitung beim GPS':'GPS-Fehler';if(st)st.textContent=m+' ('+(e&&e.message?e.message:'unbekannt')+'). Bitte Ort/PLZ verwenden.';},{enableHighAccuracy:true,timeout:15000,maximumAge:30000});
+ if(!window.isSecureContext){if(st)st.textContent='Standortabruf ist auf diesem Gerät für lokal geöffnete Dateien gesperrt (kein sicherer Kontext/HTTPS). Bitte Ort/PLZ verwenden oder „Verbindung prüfen“.';return;}
+ if(!navigator.geolocation){if(st)st.textContent='GPS wird von diesem Browser für diese Datei nicht bereitgestellt. Bitte Ort/PLZ verwenden.';return;}
+ navigator.geolocation.getCurrentPosition(p=>requestWeather(p.coords.latitude,p.coords.longitude,'GPS-Standort'),e=>{if(st)st.textContent='GPS-Standort nicht verfügbar ('+(e&&e.message?e.message:'keine Freigabe')+'). Bitte Ort/PLZ verwenden.';},{enableHighAccuracy:true,timeout:15000,maximumAge:30000});
 }
 async function fetchWeatherByPlace(){
  let st=$('#weatherStatus'),el=$('#weatherPlace'),raw=(el&&el.value||'').trim();
@@ -361,10 +353,10 @@ async function fetchWeatherByPlace(){
   await requestWeather(found.latitude,found.longitude,[found.name,found.admin1].filter(Boolean).join(', '));
  }catch(e){if(st)st.textContent='Ortssuche/Wetter fehlgeschlagen: '+(e.message||'unbekannter Fehler')+' Bitte Internet prüfen oder Werte manuell eintragen.';}
 }
-function exportDeployment(){if((S.mode||'Training')!=='Einsatz')return alert('Die Übergabe an das Einsatzprotokoll ist nur im Modus Einsatz vorgesehen.');const pkg={bridgeFormat:'rhs-search-assistant-deployment',schemaVersion:1,discipline:'Mantrailing',createdAt:new Date().toISOString(),sourceApp:'rh-mantrailing-assistent',state:S};let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(pkg,null,2)],{type:'application/json'}));a.download='RHS_Einsatz_Mantrailing_'+new Date().toISOString().slice(0,10)+'.json';a.click()}
+function exportDeployment(){if((S.mode||'Training')!=='Einsatz')return alert('Die Übergabe an das Einsatzprotokoll ist nur im Modus Einsatz vorgesehen.');const pkg={bridgeFormat:'rhs-search-assistant-deployment',schemaVersion:1,discipline:'Mantrailing',createdAt:new Date().toISOString(),sourceApp:'rh-mantrailing-assistent',state:S};let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(pkg,null,2)],{type:'application/json'}));a.download='RHS_Einsatz_Mantrailing_'+new Date().toISOString().slice(0,10)+'.json';rhsLadeHerunter(a)}
 function newCase(){if(!confirm('Neuen Vorgang starten?'))return;let sichern=confirm('Aktuellen Vorgang vorher als JSON sichern? OK = sichern, Abbrechen = ohne Sicherung fortfahren.');if(sichern)backup();let keep={team:S.team||''};S={version:3,mode:'Training',createdAt:new Date().toISOString(),events:[],track:[],finds:[],referenceTrack:[],dogTrack:[],refMode:'blind',trackView:'all',trailEnded:false,trackMode:'gps',timeTrack:[],searchStartAt:null,trackRunning:false,...keep};loadExamDefaults();save();location.reload()}
-function exportTraining(){const pkg={bridgeFormat:'rhs-mantrailing-assistent-export',schemaVersion:1,createdAt:new Date().toISOString(),sourceApp:'rh-mantrailing-assistent',state:S};let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(pkg,null,2)],{type:'application/json'}));a.download='RHS_Mantrailing_Training_'+new Date().toISOString().slice(0,10)+'.json';a.click();}
-function backup(){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify({format:'rhs-mantrailing-assistent-backup',version:1,state:S},null,2)],{type:'application/json'}));a.download=KEY+'_'+new Date().toISOString().slice(0,10)+'.json';a.click();}
+function exportTraining(){const pkg={bridgeFormat:'rhs-mantrailing-assistent-export',schemaVersion:1,createdAt:new Date().toISOString(),sourceApp:'rh-mantrailing-assistent',state:S};let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(pkg,null,2)],{type:'application/json'}));a.download='RHS_Mantrailing_Training_'+new Date().toISOString().slice(0,10)+'.json';rhsLadeHerunter(a);}
+function backup(){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify({format:'rhs-mantrailing-assistent-backup',version:1,state:S},null,2)],{type:'application/json'}));a.download=KEY+'_'+new Date().toISOString().slice(0,10)+'.json';rhsLadeHerunter(a);}
 function restore(inp){let f=inp.files[0];if(!f)return;let r=new FileReader;r.onload=()=>{try{let o=JSON.parse(r.result);if(o.format!=='rhs-mantrailing-assistent-backup'||!o.state)throw new Error('Falsches Backup-Format');o=o.state;if(!confirm('Lokale Daten durch diese Sicherung ersetzen?'))return;S=o;if(save())location.reload();else setSaveStatus('Sicherung gelesen, aber localStorage konnte nicht geschrieben werden. Stand bleibt geöffnet; bitte JSON sichern.',true)}catch(e){alert('Ungültige JSON-Datei')}};r.readAsText(f)}
 function resetAll(){newCase()}
 function protocol(){window.print()}
@@ -382,7 +374,83 @@ function initApp(){calcMT();applyMode();let m=$('#refMode'),v=$('#trackView');if
 function refreshFromRecovered(){ $$('.chip').forEach(b=>b.classList.remove('on')); bind();loadChips();renderEvents();drawTrack();if(typeof initApp==='function')initApp(); }
 pages();bind();loadChips();renderEvents();drawTrack();if(typeof initApp==='function')initApp();idbRecoverNewest(ok=>{if(ok)refreshFromRecovered()});
 
-if('serviceWorker' in navigator && window.isSecureContext){
- window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});
+/* ===== Ergänzung: robuste Downloads (C1/D5) und RHS-Teamdatenaustausch (B1) ===== */
+function rhsHinweis(text){
+  // Eigener, kurz eingeblendeter Hinweis – unabhängig von der Speicher-Statuszeile, die sonst sofort überschrieben wird.
+  let t=document.getElementById('rhsHinweis');
+  if(!t){ t=document.createElement('div'); t.id='rhsHinweis'; t.setAttribute('role','status');
+    t.style.cssText='position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);max-width:92vw;background:#1f3b2f;color:#fff;padding:10px 14px;border-radius:10px;font-size:.9rem;box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:9999;transition:opacity .3s';
+    document.body.appendChild(t); }
+  t.textContent=text; t.style.opacity='1'; clearTimeout(t._timer); t._timer=setTimeout(()=>{ t.style.opacity='0'; }, 4500);
 }
+function rhsLadeHerunter(a){
+  // Verknüpfung kurz in die Seite einfügen (nötig für manche Browser), danach aufräumen und bestätigen.
+  try{ document.body.appendChild(a); a.click(); a.remove(); }catch(e){ try{ a.click(); }catch(_){} }
+  const url=a.href; setTimeout(()=>{ try{ URL.revokeObjectURL(url); }catch(e){} }, 4000);
+  rhsHinweis('✓ Datei erstellt: '+(a.download||'Export')+' – bitte im Download-Ordner prüfen.');
+}
+const RHS_EXCHANGE_FORMAT='rhs-exchange', RHS_EXCHANGE_SCHEMA=2, RHS_APP_ID='rh-mantrailing-assistent', RHS_EIGENE_SPARTE='mantrailing';
+const RHS_FELDER=['handler','dogName','dogBirthDate','dogBreed','unit','disciplines','indicationType'];
+function rhsUid(p){ try{ return p+'-'+crypto.randomUUID(); }catch(e){ return p+'-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10); } }
+function rhsSicher(){
+  const x = S.rhsExchange = (S.rhsExchange && typeof S.rhsExchange==='object') ? S.rhsExchange : {};
+  x.instanceId = x.instanceId || rhsUid('instance');
+  x.team = Object.assign({teamId:'',handler:'',dogName:'',dogBirthDate:'',dogBreed:'',unit:'',disciplines:[],indicationType:''}, x.team||{});
+  x.fieldMeta = (x.fieldMeta && typeof x.fieldMeta==='object') ? x.fieldMeta : {};
+  x.processedPackages = Array.isArray(x.processedPackages) ? x.processedPackages.slice(-200) : [];
+  return x;
+}
+function rhsTeamExport(){
+  const x=rhsSicher(); if(!x.team.teamId) x.team.teamId=rhsUid('team');
+  const team=JSON.parse(JSON.stringify(x.team));
+  team.disciplines = Array.isArray(team.disciplines)?team.disciplines:[];
+  if(!team.disciplines.includes(RHS_EIGENE_SPARTE)) team.disciplines.push(RHS_EIGENE_SPARTE);
+  save();
+  const pkg={rhsFormat:RHS_EXCHANGE_FORMAT,schemaVersion:RHS_EXCHANGE_SCHEMA,packageType:'team',packageId:rhsUid('pkg'),createdAt:new Date().toISOString(),
+    source:{app:RHS_APP_ID,instanceId:x.instanceId},records:[{type:'team',id:team.teamId,data:team,fieldMeta:JSON.parse(JSON.stringify(x.fieldMeta))}]};
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(pkg,null,2)],{type:'application/json'}));
+  a.download='RHS_v2_Teamdaten_Mantrailing_'+new Date().toISOString().slice(0,10)+'.json';
+  rhsLadeHerunter(a);
+}
+function rhsTeamImport(inp){
+  const f=inp.files&&inp.files[0]; inp.value=''; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const p=JSON.parse(r.result);
+      if(!p||p.rhsFormat!==RHS_EXCHANGE_FORMAT) throw new Error('Keine RHS-Austauschdatei (Teamdaten).');
+      if(Number(p.schemaVersion)>RHS_EXCHANGE_SCHEMA) throw new Error('Neuere Austauschversion – hier noch nicht unterstützt.');
+      const rec=(p.records||[]).find(x=>x.type==='team'); if(!rec||!rec.data) throw new Error('Keine Team-Stammdaten enthalten.');
+      const x=rhsSicher();
+      if(p.packageId&&x.processedPackages.includes(p.packageId)){ alert('Diese Austauschdatei wurde bereits eingelesen. Es wurde nichts verändert.'); return; }
+      const d=rec.data;
+      const vorschau='Teamdaten übernehmen?\n\nHund: '+(d.dogName||'–')+' · Hundeführer/in: '+(d.handler||'–')+'\nRasse: '+(d.dogBreed||'–')+' · Geburtsdatum: '+(d.dogBirthDate||'–')+'\nHerkunft: '+((p.source&&p.source.app)||'unbekannt')
+        +(x.team.teamId&&rec.id&&x.team.teamId!==rec.id?'\n\n⚠ Die Datei stammt von einer anderen Team-ID. Nur übernehmen, wenn es sich um dasselbe reale Team handelt.':'');
+      if(!confirm(vorschau)) return;
+      let neu=0, akt=0, konfl=0;
+      RHS_FELDER.forEach(k=>{
+        if(d[k]===undefined) return;
+        let v=d[k]; if(k==='disciplines') v=Array.isArray(v)?v:String(v||'').split(/[,;\/]+/).map(t=>t.trim()).filter(Boolean);
+        const alt=x.team[k], leer=alt==null||alt===''||(Array.isArray(alt)&&!alt.length);
+        if(JSON.stringify(alt)===JSON.stringify(v)) return;
+        const im=(rec.fieldMeta||{})[k]||{revision:0}, lm=x.fieldMeta[k]||{revision:0};
+        if(leer || Number(im.revision||0)>Number(lm.revision||0)){ x.team[k]=v; x.fieldMeta[k]=im; leer?neu++:akt++; }
+        else if(Number(im.revision||0)===Number(lm.revision||0)){ konfl++; if(confirm('Konflikt bei „'+k+'“:\nLokal: '+alt+'\nImport: '+v+'\n\nImportwert übernehmen?')){ x.team[k]=v; x.fieldMeta[k]=Object.assign({},im,{revision:Number(lm.revision||0)+1}); akt++; } }
+      });
+      if(rec.id) x.team.teamId=rec.id;
+      if(p.packageId) x.processedPackages.push(p.packageId);
+      // Freitextfeld „Team“ nur füllen, wenn es noch leer ist – bestehende Eingaben bleiben unangetastet.
+      if(!S.team && (x.team.dogName||x.team.handler)){ S.team='Team '+(x.team.dogName||'')+(x.team.handler?' ('+x.team.handler+')':''); const el=document.querySelector('[data-k="team"]'); if(el) el.value=S.team; }
+      save(); rhsTeamAnzeigen();
+      alert('Teamdaten übernommen: '+neu+' neu, '+akt+' aktualisiert'+(konfl?', '+konfl+' Konflikt(e) geprüft':'')+'.');
+    }catch(e){ alert('Teamdaten konnten nicht übernommen werden: '+e.message+'\nDer vorhandene Stand bleibt unverändert.'); }
+  };
+  r.readAsText(f);
+}
+function rhsTeamAnzeigen(){
+  const el=document.getElementById('rhsTeamInfo'); if(!el) return; const t=rhsSicher().team;
+  el.textContent = (t.dogName||t.handler) ? ('Verknüpfte Teamdaten: '+[t.dogName,t.handler,t.dogBreed].filter(Boolean).join(' · ')) : 'Noch keine Teamdaten aus der RH-App-Familie übernommen.';
+}
+document.addEventListener('DOMContentLoaded',()=>{ try{ rhsTeamAnzeigen(); }catch(e){} });
 </script></body></html>
