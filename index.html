@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0f766e"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png">
-<title>RH Mantrailing-Assistent · v2.6</title>
+<title>RH Mantrailing-Assistent · v2.7</title>
 <style>
 :root{--a:#0f766e;--bg:#f5f5f4;--card:#fff;--ink:#1c1917;--mut:#6b7280;--line:#d6d3d1}
 *{box-sizing:border-box}body{margin:0;font:15px system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--ink)}
@@ -27,7 +27,7 @@ label{display:block;font-size:12px;color:#57534e}input,select,textarea{width:100
 @media(max-width:650px){.grid{grid-template-columns:1fr}main{padding:8px}}
 @media print{header,nav,.noprint{display:none!important}section{display:block!important}.card{break-inside:avoid;box-shadow:none}body{background:white}}
 </style></head>
-<body><header><h1>RH Mantrailing-Assistent <small>v2.6</small></h1><p>Trail erfassen · Tracks vergleichen · Protokoll · Fortschritt – offline, alle Daten bleiben auf dem Gerät</p></header>
+<body><header><h1>RH Mantrailing-Assistent <small>v2.7</small></h1><p>Trail erfassen · Tracks vergleichen · Protokoll · Fortschritt – offline, alle Daten bleiben auf dem Gerät</p></header>
 <nav id="nav"></nav><main>
 <section data-page="Einsatz">
 <div class="card"><div class="row noprint"><button class="btn primary" onclick="newCase()">＋ Neuer Vorgang</button></div><h2>Vorgang</h2><div class="grid"><label>Art<select data-k="mode" onchange="modeChanged()"><option>Training</option><option>Prüfung</option><option>Einsatz</option></select></label></div><div class="exam-only"><details><summary><b>Prüfungsvorgaben</b> · kompakt und anpassbar</summary><div class="grid"><label>Vorlage<select data-k="examPreset" onchange="applyExamPreset(this.value)"><option value="custom">Eigene Vorgaben</option><option value="drk">DRK 2024</option><option value="iro">FCI/IRO 2025</option></select></label><label>Prüfungsgrundlage / Stufe<input data-k="examRule" placeholder="z. B. Verband / Stufe"></label><label>Stufe (bei FCI/IRO)<select data-k="examLevel" onchange="applyExamPreset(S.examPreset||'custom')"><option value="">–</option><option>V</option><option>A</option><option>B</option></select></label><label>Max. Suchzeit (min)<input type="number" min="1" data-k="examMinutes"></label><label>Traillänge (m)<input data-k="examLength" inputmode="numeric"></label><label>Trailalter<input data-k="examAge" placeholder="z. B. 8–20 h"></label><label>Ansatz/PLS max. (min)<input type="number" min="0" data-k="examPLSMinutes"></label></div><label><input type="checkbox" id="rememberExam" onchange="rememberExamSettings(this.checked)"> Diese Vorgaben auf diesem Gerät merken</label><div class="row noprint" style="margin-top:8px"><button type="button" class="btn" onclick="saveExamPresetFile()">⬇ Prüfungsvorgaben teilen</button><button type="button" class="btn" onclick="document.getElementById('examPresetImport').click()">⬆ Prüfungsvorgaben laden</button><input id="examPresetImport" type="file" accept="application/json,.json" hidden onchange="importExamPresetFile(this)"></div><p class="muted">Vorlagen sind nur Startwerte. Zeit, Länge, Alter und PLS bleiben frei änderbar, damit unterschiedliche Prüfungsordnungen abgebildet werden können.</p></details></div><div id="saveStatus" class="muted"></div></div>
@@ -38,7 +38,7 @@ label{display:block;font-size:12px;color:#57534e}input,select,textarea{width:100
 </section>
 <section data-page="Start">
 <div class="card"><h2>Wetter am Startpunkt</h2><div class="row noprint"><button class="btn" onclick="fetchWeather()">📍 Wetter per GPS abrufen</button><button type="button" class="btn" onclick="weatherDiagnose()">🔧 Verbindung prüfen</button></div><div class="grid noprint" style="margin-top:8px"><label>Falls GPS nicht verfügbar: Ort oder PLZ<input id="weatherPlace" placeholder="z. B. 34369 Hofgeismar"></label><button type="button" class="btn" style="align-self:end" onclick="fetchWeatherByPlace()">Wetter über Ort / PLZ</button></div><div id="weatherStatus" class="muted"></div><div id="wxTips" class="good" style="margin:8px 0"></div><div class="grid"><label>Temperatur °C<input data-k="wxTemp" inputmode="decimal"></label><label>Luftfeuchte %<input data-k="wxHumidity" inputmode="numeric"></label><label>Windrichtung °<input data-k="wxWindDir" inputmode="numeric"></label><label>Wind km/h<input data-k="wxWind" inputmode="decimal"></label><label>Böen km/h<input data-k="wxGust" inputmode="decimal"></label><label>Niederschlag mm<input data-k="wxPrecip" inputmode="decimal"></label></div><label>Beobachtung vor Ort / bodennahe Luftbewegung<input data-k="wxLocal" placeholder="optional – maßgeblich für die unmittelbare Geruchslage"></label><p class="muted">Online-Abruf ist optional; ohne Internet bleiben alle Felder manuell nutzbar. Modellwetter ersetzt nicht die Beobachtung vor Ort.</p></div>
-<div class="card"><h2>Startanalyse</h2><div class="grid"><label>Trailalter<select data-k="age"><option>frisch / Hot Trail</option><option>mehrere Stunden</option><option>über 8 h / Cold Trail</option><option>über 24 h</option><option>unbekannt</option></select></label><label>Startumfeld<select data-k="startEnv"><option>ländlich</option><option>Wohngebiet</option><option>Innenstadt</option><option>Parkplatz</option><option>Bahnhof/ÖPNV</option><option>Gebäude</option></select></label><label>Wind<select data-k="wind"><option>ruhig</option><option>leicht</option><option>mittel</option><option>stark</option><option>wechselnd</option></select></label><label>Frequentierung<select data-k="traffic"><option>gering</option><option>mittel</option><option>hoch</option><option>sehr hoch</option></select></label></div>
+<div class="card"><h2>Startanalyse</h2><div class="grid"><label>Trailalter<select data-k="age"><option>frisch / Hot Trail</option><option>mehrere Stunden</option><option>über 8 h / Cold Trail</option><option>über 24 h</option><option>unbekannt</option></select></label><label>Startumfeld<select data-k="startEnv"><option value="">– bitte wählen –</option><option>Innenstadt</option><option>Wohngebiet</option><option>Ortskern / Dorf</option><option>Gewerbegebiet</option><option>Parkplatz</option><option>Bahnhof/ÖPNV</option><option>Gebäude</option><option>Ortsrand</option><option>Park/Grünanlage</option><option>Feld/Wiese</option><option>Wald</option><option>ländlich</option></select></label><label>Wind<select data-k="wind"><option>ruhig</option><option>leicht</option><option>mittel</option><option>stark</option><option>wechselnd</option></select></label><label>Frequentierung<select data-k="traffic"><option>gering</option><option>mittel</option><option>hoch</option><option>sehr hoch</option></select></label></div>
 <h3>Mögliche Besonderheiten</h3><div class="chips"><button type="button" class="chip" data-g="startFactors">mehrere Abgangsrichtungen</button><button type="button" class="chip" data-g="startFactors">Kreuzung</button><button type="button" class="chip" data-g="startFactors">Parkplatz</button><button type="button" class="chip" data-g="startFactors">Fahrzeug möglich</button><button type="button" class="chip" data-g="startFactors">ÖPNV möglich</button><button type="button" class="chip" data-g="startFactors">Wohnumfeld VP</button><button type="button" class="chip" data-g="startFactors">Menschenmenge</button><button type="button" class="chip" data-g="startFactors">starker Verkehr</button><button type="button" class="chip" data-g="startFactors">Windkanal/Bebauung</button></div>
 <label>Beobachtung am Start<textarea data-k="startObs" rows="3"></textarea></label>
 <h3>Ansatzsuche / Point Last Seen (PLS)</h3>
@@ -60,7 +60,13 @@ label{display:block;font-size:12px;color:#57534e}input,select,textarea{width:100
 <div id="wakeLockStatus" class="muted"></div>
 <div class="row noprint"><button class="btn primary big" onclick="startTracking()">Trail starten</button><button class="btn" onclick="stopTracking()">Track stoppen</button><button class="btn big" onclick="stamp('Entscheidung')">Entscheidung</button><button class="btn big" onclick="stamp('Negativ')">Negativ</button><button class="btn" onclick="stamp('Geruch verloren')">Geruch verloren</button><button class="btn" onclick="stamp('Geruch wieder aufgenommen')">wieder aufgenommen</button><button class="btn" onclick="stamp('Kreuzung')">Kreuzung</button><button class="btn" onclick="stamp('Wiederansatz / Drop')">Wiederansatz</button><button class="btn" onclick="stamp('Fahrzeug/ÖPNV-Hinweis')">Fahrzeug/ÖPNV</button><button class="btn" onclick="stamp('Fund')">Fund</button><button class="btn" onclick="articleAdd()">Gegenstand</button></div>
 <details class="noprint" id="articlesBox" style="margin:6px 0"><summary style="cursor:pointer;font-weight:650">Gegenstände auf dem Trail <span id="articlesSum" class="muted"></span></summary><p class="muted">Vom Spurleger ausgelegte Gegenstände: beim Auslegen oder beim Fund eintragen; Position wird übernommen, wenn GPS läuft.</p><div id="articlesList"></div></details>
-<div id="liveStats" class="stats noprint"><div class="stat"><b id="lsTime">00:00</b><span>Trailzeit</span></div><div class="stat"><b id="lsDist">0 m</b><span>Strecke</span></div><div class="stat"><b id="lsDev">–</b><span>Abstand Spurleger</span></div></div><div id="corridorBox" class="corridor noprint" style="display:none"></div><details id="wxTipsLive" class="noprint" style="margin:6px 0"><summary class="muted" style="cursor:pointer">Wetter-Tipps für diesen Trail anzeigen</summary><div id="wxTipsLiveBody" class="good" style="margin-top:6px"></div></details>
+<div id="liveStats" class="stats noprint"><div class="stat"><b id="lsTime">00:00</b><span>Trailzeit</span></div><div class="stat"><b id="lsDist">0 m</b><span>Strecke</span></div><div class="stat"><b id="lsDev">–</b><span>Abstand Spurleger</span></div></div><div id="corridorBox" class="corridor noprint" style="display:none"></div>
+<div class="row noprint" style="justify-content:space-between;margin:6px 0"><span id="envStatusTxt" class="muted" style="flex:1 1 55%"></span><button class="btn" onclick="envManual()">Umfeld wechselt</button></div>
+<div id="envBanner" class="warn noprint" style="display:none;margin:6px 0"></div>
+<details class="noprint" style="margin:4px 0"><summary class="muted" style="cursor:pointer">Einstellungen Umfelderkennung</summary>
+<div class="grid"><label>Umfelderkennung<select id="envModeSel" onchange="S.envMode=this.value;save();envStatus()"><option value="auto">Automatisch – Kartendaten, bei Bedarf online nachladen</option><option value="cache">Sparsam – nur offline gespeicherte Kartenbereiche</option><option value="manual">Manuell – nur Schaltfläche „Umfeld wechselt“</option><option value="off">Aus</option></select></label>
+<label>Hinweis bei Umfeldwechsel<select id="envVibSel" onchange="S.envVibrate=this.value==='1';save()"><option value="1">Anzeige und Vibration</option><option value="0">nur Anzeige</option></select></label></div>
+<p class="muted">Die App erkennt anhand der Kartendaten (OpenStreetMap über OpenFreeMap) im Umkreis von ca. 100 m, ob der Trail durch Innenstadt, Wohngebiet, Ortsrand, Gewerbegebiet, Grünanlage, Feld/Wiese oder Wald führt, und weist auf Hauptstraßen, Haltestellen und Bahnlinien hin. Die Auswertung erfolgt auf dem Gerät und nur anhand der eigenen Position – im Blindmodus wird der Trailverlauf nicht verraten. „Sparsam“ nutzt nur Kartenbereiche, die vorher unter „Live-Karte“ offline gespeichert wurden, und verbraucht unterwegs keine Daten. Die Erkennung ist ein Vorschlag; OpenStreetMap ist an Ortsrändern und in Neubaugebieten nicht immer aktuell.</p></details><details id="wxTipsLive" class="noprint" style="margin:6px 0"><summary class="muted" style="cursor:pointer">Handling-Tipps für diesen Trail anzeigen</summary><div id="wxTipsLiveBody" class="good" style="margin-top:6px"></div></details>
 <div id="timeTrackBox" class="row noprint" style="display:none"><b id="timeTrackClock">00:00</b><button type="button" class="btn" onclick="addTimeWaypoint()">Zeitpunkt markieren</button></div>
 <p class="muted">Start erst nach Start-Angaben möglich (Beobachtung am Start, Ansatzbereich oder Besonderheiten unter „Start“). Falls Android bei lokal geöffneten HTML-Dateien den Standort sperrt, bleibt der Trackmodus „Nur Zeit“ nutzbar.</p>
 <label>Kurznotiz<input id="quickNote"></label><button class="btn noprint" onclick="stamp('Beobachtung',$('#quickNote').value);$('#quickNote').value=''">Notiz</button><div id="events"></div></div>
@@ -78,8 +84,8 @@ label{display:block;font-size:12px;color:#57534e}input,select,textarea{width:100
 <div class="card"><h2>Trackvergleich</h2>
 <p class="muted">Der Referenztrack des Spurlegers kann vor, während oder nach dem Trail geladen werden. Im Blindmodus bleibt er bis zum Trailende verborgen; der virtuelle Trainer warnt nur im Helfer- oder offenen Modus. <b>Spurleger-Tipp:</b> Trail beim Legen selbst aufzeichnen, „Eigenen Track als Spurleger-Track übernehmen“, dann unten exportieren und dem Team schicken. Eine geometrische Abweichung ist keine automatische Leistungsbewertung.</p>
 <div class="grid"><label>Referenztrack-Sichtbarkeit<select id="refMode" onchange="setRefMode(this.value)"><option value="blind">Blindmodus – erst nach Trailende</option><option value="helper">Helfermodus – während Trail sichtbar</option><option value="open">Offener Trainingsmodus</option></select></label><label>Virtueller Trainer (Korridor-Warnung)<select id="corridorM" onchange="S.corridorM=+this.value;save();corridorCheck()"><option value="0">aus</option><option value="30">Warnung ab 30 m Abstand</option><option value="50">Warnung ab 50 m Abstand</option><option value="100">Warnung ab 100 m Abstand</option></select></label><label>Trackanzeige<select id="trackView" onchange="S.trackView=this.value;save();drawTrack();updateLiveMap(false)"><option value="all">alle verfügbaren Tracks</option><option value="refhf">Spurleger + Hundeführer</option><option value="refdog">Spurleger + Hund</option><option value="hf">nur Hundeführer</option></select></label></div>
-<div class="row noprint"><label class="btn">Spurleger-Track laden<input hidden type="file" accept=".gpx,.kml,.json,.geojson" onchange="importTrackFile(this,'reference')"></label><label class="btn">Hundetrack laden<input hidden type="file" accept=".gpx,.kml,.json,.geojson" onchange="importTrackFile(this,'dog')"></label><label class="btn">Hundetrack-Screenshot<input hidden type="file" accept="image/*" onchange="loadTrackOverlay(this)"></label><button class="btn" onclick="S.trailEnded=true;save();drawTrack();stamp('Trail beendet / Referenz freigegeben');protoAsk('end')">Trail beenden / Vergleich freigeben</button><button class="btn" onclick="trackAsReference()">Als Spurleger-Track übernehmen</button><button class="btn danger" onclick="clearTrackExtras()">Zusatztracks löschen</button></div>
-<div id="trackStatus" class="muted"></div><div id="refAgeBox" class="card noprint" style="display:none;background:#fafaf9;margin:8px 0"><b>Wann wurde die Spur gelegt?</b><div id="refAgeHint" class="muted"></div><div class="grid"><label>Legezeit (Start des Spurlegers)<input id="refLaidAt" type="datetime-local"></label><label>… oder Alter der Spur beim Trailstart<select id="refAgeQuick"><option value="">bitte wählen</option><option value="0.25">15 Minuten</option><option value="0.5">30 Minuten</option><option value="1">1 Stunde</option><option value="2">2 Stunden</option><option value="4">4 Stunden</option><option value="8">8 Stunden</option><option value="12">12 Stunden</option><option value="24">24 Stunden</option><option value="48">48 Stunden</option><option value="72">3 Tage</option></select></label></div><div class="row"><button class="btn primary" onclick="refAgeApply()">Übernehmen</button><button class="btn" onclick="$('#refAgeBox').style.display='none'">Später</button></div></div><div id="trailAgeInfo" class="muted"></div><div class="legend"><span><i class="dot ref"></i>Spurleger</span><span><i class="dot hf"></i>Hundeführer</span><span><i class="dot dog"></i>Hund</span></div>
+<div class="row noprint"><label class="btn">Spurleger-Track laden<input hidden type="file" accept=".gpx,.kml,.json,.geojson" onchange="importTrackFile(this,'reference')"></label><label class="btn">Hundetrack laden<input hidden type="file" accept=".gpx,.kml,.json,.geojson" onchange="importTrackFile(this,'dog')"></label><label class="btn">Hundetrack-Screenshot<input hidden type="file" accept="image/*" onchange="loadTrackOverlay(this)"></label><button class="btn" onclick="S.trailEnded=true;save();drawTrack();stamp('Trail beendet / Referenz freigegeben');protoAsk('end')">Trail beenden / Vergleich freigeben</button><button class="btn" onclick="trackAsReference()">Als Spurleger-Track übernehmen</button><button class="btn" onclick="envAnalyzeRef()">Trailverlauf auswerten (Umfeld)</button><button class="btn danger" onclick="clearTrackExtras()">Zusatztracks löschen</button></div>
+<div id="trackStatus" class="muted"></div><div id="refAgeBox" class="card noprint" style="display:none;background:#fafaf9;margin:8px 0"><b>Wann wurde die Spur gelegt?</b><div id="refAgeHint" class="muted"></div><div class="grid"><label>Legezeit (Start des Spurlegers)<input id="refLaidAt" type="datetime-local"></label><label>… oder Alter der Spur beim Trailstart<select id="refAgeQuick"><option value="">bitte wählen</option><option value="0.25">15 Minuten</option><option value="0.5">30 Minuten</option><option value="1">1 Stunde</option><option value="2">2 Stunden</option><option value="4">4 Stunden</option><option value="8">8 Stunden</option><option value="12">12 Stunden</option><option value="24">24 Stunden</option><option value="48">48 Stunden</option><option value="72">3 Tage</option></select></label></div><div class="row"><button class="btn primary" onclick="refAgeApply()">Übernehmen</button><button class="btn" onclick="$('#refAgeBox').style.display='none'">Später</button></div></div><div id="trailAgeInfo" class="muted"></div><div id="envRouteInfo" class="muted"></div><div class="legend"><span><i class="dot ref"></i>Spurleger</span><span><i class="dot hf"></i>Hundeführer</span><span><i class="dot dog"></i>Hund</span></div>
 <canvas id="track"></canvas>
 <div id="timeTrackList"></div>
 <div id="trackCompare" class="good"></div>
@@ -142,8 +148,8 @@ label{display:block;font-size:12px;color:#57534e}input,select,textarea{width:100
 </section>
 <section data-page="Hilfe">
 <div class="card"><h2>Bedienungsanleitung</h2>
-<p class="muted">RH Mantrailing-Assistent v2.6 · Alle Daten bleiben auf diesem Gerät. Die App ist eigenständig nutzbar; weitere Apps der RH-Familie sind nicht erforderlich.</p>
-<div class="good"><b>Neu in Version 2.6</b> (gegenüber 2.1): Trainingsprotokoll mit Wochenauswertung · Track-Export (GPX, KML, GeoJSON, Bild) und Teilen · virtueller Trainer mit Korridor-Warnung · Live-Werte · Spurleger-Modus · Legezeit/Trailalter beim Laden des Spurleger-Tracks · Gegenstände auf dem Trail · Handling-Tipps aus Wetter, Trailalter und Umgebung mit Sicherheitshinweisen für den Hund · überarbeitete Bedienung.</div>
+<p class="muted">RH Mantrailing-Assistent v2.7 · Alle Daten bleiben auf diesem Gerät. Die App ist eigenständig nutzbar; weitere Apps der RH-Familie sind nicht erforderlich.</p>
+<div class="good"><b>Neu seit Version 2.1</b> (Stand 2.7): Trainingsprotokoll mit Wochenauswertung · Track-Export (GPX, KML, GeoJSON, Bild) und Teilen · virtueller Trainer mit Korridor-Warnung · Live-Werte · Spurleger-Modus · Legezeit/Trailalter beim Laden des Spurleger-Tracks · Gegenstände auf dem Trail · Handling-Tipps aus Wetter, Trailalter und Umgebung mit Sicherheitshinweisen für den Hund · Umfelderkennung entlang des Trails (Stadt, Ortsrand, Feld, Wald) mit Hinweisen bei Wechseln · Impressum und Datenschutzerklärung · überarbeitete Bedienung.</div>
 </div>
 <details class="card"><summary>1. Installation, Daten und Voraussetzungen</summary>
 <p><b>Installation:</b> App über die bereitgestellte https-Adresse im Browser öffnen, dann im Browsermenü „Zum Startbildschirm hinzufügen“ bzw. „App installieren“ wählen. Nach dem ersten Aufruf startet die App auch ohne Netz.</p>
@@ -157,7 +163,7 @@ label{display:block;font-size:12px;color:#57534e}input,select,textarea{width:100
 </details>
 <details class="card"><summary>3. Reiter Start – Wetter, Handling-Tipps, Startanalyse</summary>
 <p><b>Wetter:</b> „Wetter per GPS abrufen“ oder Ort/PLZ eingeben und „Wetter über Ort / PLZ“ antippen. Temperatur, Luftfeuchte, Wind, Böen und Niederschlag werden übernommen und können von Hand korrigiert werden. Die eigene Beobachtung vor Ort (bodennahe Luftbewegung) hat Vorrang vor Modellwetter.</p>
-<p><b>Handling-Tipps:</b> Nach dem Abruf erscheinen Hinweise zu Temperatur, Feuchte, Wind und Windrichtung, Niederschlag, Nebel, Tageszeit (Thermik, abfließende Kaltluft), Trailalter und Startumfeld. Ab 28 °C bzw. ab −5 °C erscheinen rot markierte <b>Sicherheitshinweise für den Hund</b>; die Erinnerung an <b>Hundewasser</b> erscheint immer. Es handelt sich um allgemeine Faustregeln, nicht um eine Beurteilung der Geruchslage vor Ort.</p>
+<p><b>Handling-Tipps:</b> Nach dem Abruf erscheinen Hinweise zu Temperatur, Feuchte, Wind und Windrichtung, Niederschlag, Nebel, Tageszeit (Thermik, abfließende Kaltluft), Trailalter und Startumfeld, gegliedert nach Sicherheit, Wetter, Trailalter und Umfeld. Da Mantrailing überwiegend in Ortslage stattfindet, berücksichtigen die Tipps bei Wahl eines städtischen Startumfelds (Innenstadt, Wohngebiet, Ortskern / Dorf, Gewerbegebiet, Parkplatz, Bahnhof/ÖPNV, Gebäude) Straßenschluchten, Verkehr durch Autos, Busse und Bahnen, Haltestellen, Parkplätze, Untergründe, Straßenquerungen und Streusalz. Ab 28 °C bzw. ab −5 °C erscheinen rot markierte <b>Sicherheitshinweise für den Hund</b>; die Erinnerung an <b>Hundewasser</b> erscheint immer. Es handelt sich um allgemeine Faustregeln, nicht um eine Beurteilung der Geruchslage vor Ort.</p>
 <p><b>Startanalyse und Ansatzsuche (PLS):</b> Trailalter, Startumfeld, Wind, Frequentierung, Besonderheiten sowie Ansatzbereich, Abgänge, Ergebnis, Zeit bis zur Entscheidung (Format min:s) und Sicherheit erfassen. Mindestens eine Startangabe (Beobachtung am Start, Ansatzbereich oder eine Besonderheit) ist Voraussetzung für „Trail starten“. Die Schaltflächen „Abgang markieren“, „Fehlansatz“ usw. schreiben Ereignisse mit Uhrzeit.</p>
 </details>
 <details class="card"><summary>4. Reiter Live – Trail aufzeichnen</summary>
@@ -166,6 +172,9 @@ label{display:block;font-size:12px;color:#57534e}input,select,textarea{width:100
 <p><b>Ereignisse:</b> Entscheidung, Negativ, Geruch verloren, wieder aufgenommen, Kreuzung, Wiederansatz, Fahrzeug/ÖPNV und Fund werden mit Uhrzeit festgehalten; „Notiz“ ergänzt eine Kurznotiz.</p>
 <p><b>Gegenstände:</b> „Gegenstand“ trägt einen ausgelegten Gegenstand ein; läuft GPS, wird die Position übernommen. Im Bereich „Gegenstände auf dem Trail“ den Status auf gefunden, nicht gefunden oder offen setzen. Gegenstände erscheinen farbig in der Trackgrafik, als Wegpunkte im GPX-Export und im Protokoll.</p>
 <p><b>Wetter-Tipps</b> sind im Live-Reiter aufklappbar, damit sie während des Trails griffbereit sind.</p>
+<p><b>Umfelderkennung:</b> Da Start und Trailverlauf verschieden sein können (z. B. vom Ortskern hinaus ins Feld), erkennt die App während des Trails etwa alle 80–100 m anhand der Kartendaten das aktuelle Umfeld. Bei einem Wechsel erscheint ein Hinweis mit passenden Handling-Tipps (z. B. „Ortsausgang: Wind wirkt jetzt ungebremst …“), auf Wunsch mit Vibration, und ein Ereignis wird gespeichert. Nahe Hauptstraßen, Haltestellen und Bahnlinien gibt es eigene Sicherheitshinweise. Die Handling-Tipps richten sich während des Trails nach dem aktuellen Umfeld. Ein Wechsel wird erst nach zwei gleichen Messungen gemeldet, damit es an Grenzen nicht ständig springt.</p>
+<p><b>Einstellungen</b> (unter „Einstellungen Umfelderkennung“): <i>Automatisch</i> lädt Kartendaten bei Bedarf nach; <i>Sparsam</i> nutzt nur vorher offline gespeicherte Kartenbereiche und verbraucht unterwegs keine Daten; <i>Manuell</i> nutzt nur die Schaltfläche „Umfeld wechselt“ mit Schnellauswahl; <i>Aus</i> schaltet die Funktion ab. Die Vibration lässt sich getrennt abschalten.</p>
+<p><b>Startumfeld:</b> Beim Wetterabruf per GPS schlägt die App das Startumfeld vor, sofern es noch nicht gewählt ist. Beim Abruf über Ort/PLZ geschieht das nicht, weil dann nur die Ortsmitte bekannt ist.</p>
 </details>
 <details class="card"><summary>5. Trackvergleich, Legezeit und virtueller Trainer</summary>
 <p><b>Spurleger-Track laden:</b> GPX, KML (auch Gaia-GPS-Format), GeoJSON oder JSON wählen. Danach fragt die App, <b>wann die Spur gelegt wurde</b>. Enthält die Datei Zeitstempel, ist der erste als Legezeit vorgeschlagen; sonst die Legezeit eintragen oder das Alter wählen (15 Minuten bis 3 Tage). Die App setzt daraufhin „Trail gelegt“ und die Trailalter-Kategorie; das Alter fließt in Handling-Tipps und Protokoll ein.</p>
@@ -173,6 +182,7 @@ label{display:block;font-size:12px;color:#57534e}input,select,textarea{width:100
 <p><b>Referenztrack-Sichtbarkeit:</b> Blindmodus verbirgt den Spurleger-Track bis „Trail beenden / Vergleich freigeben“. Helfermodus und offener Trainingsmodus zeigen ihn während des Trails.</p>
 <p><b>Virtueller Trainer:</b> Korridor auf 30, 50 oder 100 m stellen. Überschreitet der Abstand zum Spurleger-Track diesen Wert, gibt es Ton, Vibration, einen roten Hinweis und einen Eintrag „Korridor verlassen“; bei Rückkehr „Zurück im Korridor“. Im Blindmodus ist die Warnung abgeschaltet.</p>
 <p><b>Selbst Spur legen:</b> Beim Legen „Trail starten“, am Ende „Track stoppen“ und „Als Spurleger-Track übernehmen“, dann exportieren und an das Team senden. Der eigene Track wird dabei für den Hundetrail geleert.</p>
+<p><b>Trailverlauf auswerten (Umfeld):</b> Zeigt, durch welche Umgebungen der Spurleger-Track führt (z. B. „0–350 m Wohngebiet · 350–1.100 m Feld/Wiese“), sowie Hauptstraßen und Haltestellen. Im Blindmodus erst nach „Trail beenden / Vergleich freigeben“ möglich. Nach „Track stoppen“ wird der eigene Track automatisch ausgewertet; die Umgebungen erscheinen im Protokoll und werden dort unter „Umgebung“ vorgemerkt.</p>
 <p><b>Trackanzeige</b> wählt, welche Tracks gezeigt werden. Die Abweichung zwischen den Tracks ist ein geometrischer Wert und keine Leistungsnote.</p>
 </details>
 <details class="card"><summary>6. Export, Teilen und Live-Karte</summary>
@@ -194,6 +204,8 @@ label{display:block;font-size:12px;color:#57534e}input,select,textarea{width:100
 <p><b>„Trail starten“ reagiert nicht:</b> Zuerst im Reiter Start eine Startangabe eintragen.</p>
 <p><b>Kein GPS:</b> App über https öffnen und Standortfreigabe erteilen, sonst Trackmodus „Nur Zeit“.</p>
 <p><b>Keine Warnung des virtuellen Trainers:</b> Korridor eingestellt? Spurleger-Track geladen? Blindmodus schaltet die Warnung ab. Der Ton setzt bei manchen Geräten eine vorherige Bildschirmberührung voraus.</p>
+<p><b>Muss das Wetter abgerufen werden?</b> Nein. Alle Funktionen arbeiten auch ohne Wetterabruf und ohne Internet; die Handling-Tipps beruhen dann auf Trailalter und Umfeld, und die Wetterfelder bleiben im Protokoll leer. Ohne Netz lässt sich das Umfeld über „Umfeld wechselt“ angeben.</p>
+<p><b>GPS-Signal kurz weg:</b> Die App zeigt einen Hinweis, zeichnet aber weiter auf, sobald wieder Empfang besteht. Ein Meldefenster erscheint nur, wenn die Standortfreigabe verweigert wurde.</p>
 <p><b>Spurleger-Track fehlt im Export:</b> Im Blindmodus erst „Trail beenden / Vergleich freigeben“.</p>
 <p><b>Nach einem Update wirkt etwas veraltet:</b> App einmal vollständig schließen und neu öffnen; die neue Version wird dann geladen.</p>
 </details>
@@ -211,7 +223,7 @@ label{display:block;font-size:12px;color:#57534e}input,select,textarea{width:100
 <p><b>5. Externe Dienste</b><br>Nur wenn Sie die jeweilige Funktion nutzen, stellt die App Anfragen an folgende Dienste; dabei wird Ihre IP-Adresse übermittelt:</p>
 <ul>
 <li><b>Open-Meteo</b> (api.open-meteo.com, geocoding-api.open-meteo.com) – Wetterabruf und Ortssuche. Übermittelt werden die Koordinaten des Standorts bzw. der eingegebene Ort oder die Postleitzahl.</li>
-<li><b>OpenFreeMap</b> (tiles.openfreemap.org) – Kartenkacheln der Live-Karte. Aus den abgerufenen Kacheln ist erkennbar, welcher Kartenausschnitt angesehen wird.</li>
+<li><b>OpenFreeMap</b> (tiles.openfreemap.org) – Kartenkacheln der Live-Karte und, sofern die Umfelderkennung auf „Automatisch“ steht, Kartendaten rund um die aktuelle Position. Aus den abgerufenen Kacheln ist der ungefähre Kartenausschnitt erkennbar. Die Auswertung des Umfelds erfolgt ausschließlich auf dem Gerät; in den Einstellungen „Sparsam“, „Manuell“ oder „Aus“ werden dafür keine Kacheln abgerufen.</li>
 <li><b>unpkg</b> (unpkg.com) – einmaliges Laden der Kartenbibliothek MapLibre; danach aus dem Zwischenspeicher des Geräts.</li>
 </ul>
 <p>Rechtsgrundlage ist Art. 6 Abs. 1 lit. a DSGVO (Ihre Nutzung der Funktion) bzw. lit. f DSGVO. Auf die Datenverarbeitung durch diese Anbieter hat die Verantwortliche keinen Einfluss; es gelten deren Datenschutzhinweise.</p>
@@ -229,10 +241,10 @@ let S={version:3,mode:'Training',createdAt:new Date().toISOString(),events:[],tr
 try{S=Object.assign(S,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
 let saveWarned=false;function setSaveStatus(t,bad=false){let e=$('#saveStatus');if(e){e.textContent=t;e.style.color=bad?'#b91c1c':''}}function idbMirror(payload){try{let q=indexedDB.open('RHS-AssistantStore',1);q.onupgradeneeded=()=>{if(!q.result.objectStoreNames.contains('states'))q.result.createObjectStore('states')};q.onsuccess=()=>{let db=q.result,tx=db.transaction('states','readwrite');tx.objectStore('states').put(payload,KEY);tx.oncomplete=()=>db.close()}}catch(e){}}function idbRecoverNewest(after){try{let q=indexedDB.open('RHS-AssistantStore',1);q.onupgradeneeded=()=>{if(!q.result.objectStoreNames.contains('states'))q.result.createObjectStore('states')};q.onsuccess=()=>{let db=q.result,tx=db.transaction('states','readonly'),r=tx.objectStore('states').get(KEY);r.onsuccess=()=>{let m=r.result;db.close();if(m&&(!S.updatedAt||String(m.updatedAt||'')>String(S.updatedAt||''))){S=Object.assign(S,m);setSaveStatus('Neueren Stand aus Gerätespeicher wiederhergestellt.');if(after)after(true)}else if(after)after(false)};r.onerror=()=>{db.close();if(after)after(false)}}}catch(e){if(after)after(false)}}function save(){S.updatedAt=new Date().toISOString();let payload=JSON.stringify(S);try{localStorage.setItem(KEY,payload);idbMirror(S);setSaveStatus('Gespeichert · '+new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}));return true}catch(e){idbMirror(S);setSaveStatus('Lokaler Speicher fehlgeschlagen – Kopie im Gerätespeicher wird versucht. Bitte JSON sichern.',true);return false}}
 function bind(){$$('[data-k]').forEach(el=>{let k=el.dataset.k;if(S[k]!=null)el.value=S[k];el.oninput=()=>{S[k]=el.value;save();}});$$('.chip').forEach(b=>b.onclick=()=>{b.classList.toggle('on');saveChips();});}
-function saveChips(){S.chips={};$$('.chip.on').forEach(b=>(S.chips[b.dataset.g]??=[]).push(b.textContent));save();}
+function saveChips(){S.chips={};$$('.chip.on').forEach(b=>(S.chips[b.dataset.g]??=[]).push(b.textContent));save();try{wxTipsRender()}catch(e){}}
 function loadChips(){for(const [g,a] of Object.entries(S.chips||{}))$$(`.chip[data-g="${g}"]`).forEach(b=>b.classList.toggle('on',a.includes(b.textContent)));}
 function pages(){let secs=$$('section[data-page]');let n=$('#nav');n.innerHTML='';secs.forEach((s,i)=>{let b=document.createElement('button');b.textContent=s.dataset.page;b.onclick=()=>show(i);n.appendChild(b)});show(0)}
-function show(i){$$('section[data-page]').forEach((s,j)=>s.classList.toggle('on',i===j));$$('#nav button').forEach((b,j)=>b.classList.toggle('on',i===j));scrollTo(0,0);let page=$$('section[data-page]')[i]?.dataset.page;if(page==='Live'){drawTrack();liveStatsUpdate();articlesRender();wxTipsRender();trailAgeRender();if($('#liveMapCard')?.open)ensureLiveMap();}if(page==='Protokoll')protoRender();}
+function show(i){$$('section[data-page]').forEach((s,j)=>s.classList.toggle('on',i===j));$$('#nav button').forEach((b,j)=>b.classList.toggle('on',i===j));scrollTo(0,0);let page=$$('section[data-page]')[i]?.dataset.page;if(page==='Live'){drawTrack();liveStatsUpdate();articlesRender();wxTipsRender();trailAgeRender();envStatus();envRouteRender();if($('#liveMapCard')?.open)ensureLiveMap();}if(page==='Protokoll')protoRender();}
 function stamp(type,note=''){S.events.push({id:crypto.randomUUID?.()||Date.now()+Math.random(),at:new Date().toISOString(),type,note});save();renderEvents();}
 function renderEvents(){let e=$('#events');if(e)e.innerHTML=(S.events||[]).slice().reverse().map(x=>`<div class="event"><b>${new Date(x.at).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})} · ${x.type}</b>${x.note?'<br>'+esc(x.note):''}</div>`).join('')||'<p class="muted">Noch keine Ereignisse.</p>';}
 function esc(x){return String(x||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
@@ -277,8 +289,10 @@ function getOfmStyleMeta(){
  ofmStyleMetaPromise=fetch(OFM_STYLE_URL).then(r=>r.json()).then(style=>{
   let srcKey=Object.keys(style.sources||{}).find(k=>style.sources[k].type==='vector');
   let src=srcKey?style.sources[srcKey]:null;
-  return {tileTemplate:(src&&src.tiles&&src.tiles[0])||null, maxzoom:(src&&src.maxzoom)||14};
- }).catch(()=>({tileTemplate:null,maxzoom:14}));
+  let meta={tileTemplate:(src&&src.tiles&&src.tiles[0])||null, maxzoom:(src&&src.maxzoom)||14};
+  if(meta.tileTemplate){try{localStorage.setItem('rhs-ofm-meta',JSON.stringify(meta))}catch(e){}}else ofmStyleMetaPromise=null;
+  return meta;
+ }).catch(()=>{ofmStyleMetaPromise=null;try{let m=JSON.parse(localStorage.getItem('rhs-ofm-meta')||'null');if(m&&m.tileTemplate)return m}catch(e){}return {tileTemplate:null,maxzoom:14}});
  return ofmStyleMetaPromise;
 }
 async function downloadMapArea(){
@@ -371,7 +385,7 @@ function gpsStart(){
  if(!window.isSecureContext){alert('GPS ist auf diesem Gerät für lokal geöffnete Dateien gesperrt (kein sicherer Kontext/HTTPS). Bitte Trackmodus „Nur Zeit“ verwenden oder die Datei über eine https-Adresse öffnen.');return;}
  if(!navigator.geolocation)return alert('GPS nicht verfügbar.');
  if(watch!=null)return;
- watch=navigator.geolocation.watchPosition(p=>{S.track.push({t:new Date().toISOString(),lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy});save();drawTrack();updateLiveMap();liveStatsUpdate();corridorCheck();},e=>alert('GPS: '+e.message),{enableHighAccuracy:true,maximumAge:3000,timeout:15000});
+ watch=navigator.geolocation.watchPosition(p=>{S.track.push({t:new Date().toISOString(),lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy});save();drawTrack();updateLiveMap();liveStatsUpdate();corridorCheck();envLiveCheck();},gpsError,{enableHighAccuracy:true,maximumAge:3000,timeout:15000});
  S.trackRunning=true;save();stamp('GPS-Track gestartet');requestWakeLock();
 }
 function gpsStop(){if(watch!=null)navigator.geolocation.clearWatch(watch);watch=null;S.trackRunning=false;save();stamp('GPS-Track gestoppt');releaseWakeLock();}
@@ -406,10 +420,11 @@ function updateTrackModeUI(){
 }
 function startTracking(){
  if(!requireStartData())return;
+ envReset();
  if((S.trackMode||'gps')==='time')timeTrackStart();else gpsStart();
  stamp('Trail gestartet');
 }
-function stopTracking(){if(!S.trackRunning)return rhsHinweis('Es läuft gerade kein Track.');if((S.trackMode||'gps')==='time')timeTrackStop();else gpsStop();liveStatsUpdate();corridorCheck();protoAsk('stop');}
+function stopTracking(){if(!S.trackRunning)return rhsHinweis('Es läuft gerade kein Track.');if((S.trackMode||'gps')==='time')timeTrackStop();else gpsStop();envAfterTrail();liveStatsUpdate();corridorCheck();protoAsk('stop');}
 let timeTrackTimer=null;
 function timeTrackStart(){
  if(!S.searchStartAt)S.searchStartAt=new Date().toISOString();
@@ -474,7 +489,7 @@ function fetchWeather(){
  let st=$('#weatherStatus');if(st)st.textContent='Standort wird ermittelt …';
  if(!window.isSecureContext){if(st)st.textContent='Standortabruf ist auf diesem Gerät für lokal geöffnete Dateien gesperrt (kein sicherer Kontext/HTTPS). Bitte Ort/PLZ verwenden oder „Verbindung prüfen“.';return;}
  if(!navigator.geolocation){if(st)st.textContent='GPS wird von diesem Browser für diese Datei nicht bereitgestellt. Bitte Ort/PLZ verwenden.';return;}
- navigator.geolocation.getCurrentPosition(p=>requestWeather(p.coords.latitude,p.coords.longitude,'GPS-Standort'),e=>{if(st)st.textContent='GPS-Standort nicht verfügbar ('+(e&&e.message?e.message:'keine Freigabe')+'). Bitte Ort/PLZ verwenden.';},{enableHighAccuracy:true,timeout:15000,maximumAge:30000});
+ navigator.geolocation.getCurrentPosition(p=>requestWeather(p.coords.latitude,p.coords.longitude,'GPS-Standort').then(ok=>{if(ok)envSuggestStart(p.coords.latitude,p.coords.longitude)}),e=>{if(st)st.textContent='GPS-Standort nicht verfügbar ('+(e&&e.message?e.message:'keine Freigabe')+'). Bitte Ort/PLZ verwenden.';},{enableHighAccuracy:true,timeout:15000,maximumAge:30000});
 }
 async function fetchWeatherByPlace(){
  let st=$('#weatherStatus'),el=$('#weatherPlace'),raw=(el&&el.value||'').trim();
@@ -509,10 +524,9 @@ function calcMT(){
  if(S.saCont==='bekannt kontaminiert'||S.saCont==='unklar')out.push('Referenzgeruch ist nicht eindeutig sauber: Kontamination in Interpretation und Übergabe ausdrücklich mitführen.');
  $('#mtAdvice').innerHTML='<b>Arbeitsfokus</b><br>'+out.map(esc).join('<br>');
 }
-function initApp(){articlesRender();trailAgeRender();calcMT();applyMode();let cm=$('#corridorM');if(cm)cm.value=String(S.corridorM||0);liveStatsUpdate();let m=$('#refMode'),v=$('#trackView');if(m)m.value=S.refMode||'blind';if(v)v.value=S.trackView||'all';updateTrackModeUI();resumeTracking();}
+function initApp(){articlesRender();trailAgeRender();envInitUI();calcMT();applyMode();let cm=$('#corridorM');if(cm)cm.value=String(S.corridorM||0);liveStatsUpdate();let m=$('#refMode'),v=$('#trackView');if(m)m.value=S.refMode||'blind';if(v)v.value=S.trackView||'all';updateTrackModeUI();resumeTracking();}
 
 function refreshFromRecovered(){ $$('.chip').forEach(b=>b.classList.remove('on')); bind();loadChips();renderEvents();drawTrack();if(typeof initApp==='function')initApp(); }
-pages();bind();loadChips();renderEvents();drawTrack();if(typeof initApp==='function')initApp();idbRecoverNewest(ok=>{if(ok)refreshFromRecovered()});
 
 
 /* ===== Ergänzung: Track-Export (GPX / KML / GeoJSON / PNG) ===== */
@@ -593,6 +607,189 @@ async function shareTracks(){
 
 
 
+
+/* ===== Umfelderkennung aus Kartendaten (OpenMapTiles-Schema, Auswertung auf dem Gerät) ===== */
+const ENV_LIST=['Innenstadt','Wohngebiet','Ortsrand','Gewerbegebiet','Park/Grünanlage','Feld/Wiese','Wald','offenes Gelände'];
+const ENV_Z=14,ENV_R=100;
+var envTileMem=new Map(),envLast=null,envPending=null,envBusy=false,envLastCheck=0,envRoadWarnAt=0,envStopWarnAt=0;
+function envMode(){return S.envMode||'auto'}
+function envIsUrban(e){return ['Innenstadt','Wohngebiet','Gewerbegebiet','Ortsrand','Park/Grünanlage','Ortskern / Dorf','Parkplatz','Bahnhof/ÖPNV','Gebäude'].includes(e)}
+function pbfR(b){return {b,p:0}}
+function pbfV(r){let x=0,s=1,c;do{c=r.b[r.p++];x+=(c&127)*s;s*=128}while(c>=128&&r.p<r.b.length);return x}
+function pbfSkip(r,t){if(t===0)pbfV(r);else if(t===1)r.p+=8;else if(t===2){let l=pbfV(r);r.p+=l}else if(t===5)r.p+=4;else throw Error('pbf')}
+function pbfBytes(r){let l=pbfV(r),s=r.p;r.p+=l;return r.b.subarray(s,s+l)}
+function pbfPacked(r){let l=pbfV(r),e=r.p+l,a=[];while(r.p<e)a.push(pbfV(r));return a}
+const envTD=new TextDecoder();
+function mvtVal(b){let r=pbfR(b),v=null;while(r.p<r.b.length){let k=pbfV(r),f=k>>3,t=k&7;
+ if(f===1)v=envTD.decode(pbfBytes(r));else if(f===2){v=new DataView(r.b.buffer,r.b.byteOffset+r.p,4).getFloat32(0,true);r.p+=4}
+ else if(f===3){v=new DataView(r.b.buffer,r.b.byteOffset+r.p,8).getFloat64(0,true);r.p+=8}
+ else if(f===4||f===5)v=pbfV(r);else if(f===6){let n=pbfV(r);v=n%2?-(n+1)/2:n/2}else if(f===7)v=!!pbfV(r);else pbfSkip(r,t)}return v}
+function mvtFeat(b,keys,vals){let r=pbfR(b),tags=[],type=0,g=[];
+ while(r.p<r.b.length){let k=pbfV(r),f=k>>3,t=k&7;if(f===2)tags=pbfPacked(r);else if(f===3)type=pbfV(r);else if(f===4)g=pbfPacked(r);else pbfSkip(r,t)}
+ let props={};for(let i=0;i+1<tags.length;i+=2)props[keys[tags[i]]]=vals[tags[i+1]];
+ let x=0,y=0,parts=[],cur=null,i=0;
+ while(i<g.length){let c=g[i++],id=c&7,n=c>>3;
+  if(id===1||id===2){for(let j=0;j<n&&i+1<g.length+1;j++){let dx=g[i++],dy=g[i++];x+=(dx>>>1)^-(dx&1);y+=(dy>>>1)^-(dy&1);if(id===1){cur=[];parts.push(cur)}if(cur)cur.push([x,y])}}
+  else if(id===7){if(cur&&cur.length)cur.push(cur[0])}else break}
+ return {type,props,parts};
+}
+function mvtLayer(b,want){let r=pbfR(b),name='',keys=[],vals=[],feats=[],extent=4096;
+ while(r.p<r.b.length){let k=pbfV(r),f=k>>3,t=k&7;
+  if(f===1)name=envTD.decode(pbfBytes(r));else if(f===2)feats.push(pbfBytes(r));else if(f===3)keys.push(envTD.decode(pbfBytes(r)));else if(f===4)vals.push(mvtVal(pbfBytes(r)));else if(f===5)extent=pbfV(r);else pbfSkip(r,t)}
+ if(!want.includes(name))return null;return {name,extent,features:feats.map(fb=>mvtFeat(fb,keys,vals))}}
+function mvtDecode(b,want){let r=pbfR(b),out={};while(r.p<r.b.length){let k=pbfV(r),f=k>>3,t=k&7;if(f===3){let L=mvtLayer(pbfBytes(r),want);if(L)out[L.name]=L}else pbfSkip(r,t)}return out}
+async function envTemplate(){
+ let stored=null;try{stored=JSON.parse(localStorage.getItem('rhs-ofm-meta')||'null')}catch(e){}
+ if(stored&&stored.tileTemplate&&(envMode()==='cache'||navigator.onLine===false))return stored.tileTemplate;
+ if(envMode()==='cache')return null;
+ try{let m=await getOfmStyleMeta();if(m&&m.tileTemplate)return m.tileTemplate}catch(e){}
+ return stored&&stored.tileTemplate||null;
+}
+async function envTile(z,x,y){
+ let tpl=await envTemplate();if(!tpl)return null;
+ let url=tpl.replace('{z}',z).replace('{x}',x).replace('{y}',y);
+ if(envTileMem.has(url))return envTileMem.get(url);
+ let buf=await tileGet(url);
+ if(!buf&&envMode()==='auto'&&navigator.onLine!==false){try{let r=await fetchTO(url,10000);if(r.ok){buf=await r.arrayBuffer();tileSet(url,buf)}}catch(e){}}
+ if(!buf)return null;
+ let u8=new Uint8Array(buf);
+ try{if(u8[0]===0x1f&&u8[1]===0x8b&&typeof DecompressionStream!=='undefined')u8=new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer())}catch(e){return null}
+ let t=null;try{t=mvtDecode(u8,['building','landuse','landcover','park','transportation','poi'])}catch(e){t=null}
+ if(envTileMem.size>40)envTileMem.clear();envTileMem.set(url,t);return t;
+}
+function envPip(x,y,parts){let ins=false;for(const r of parts){for(let i=0,j=r.length-1;i<r.length;j=i++){let xi=r[i][0],yi=r[i][1],xj=r[j][0],yj=r[j][1];if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/((yj-yi)||1e-9)+xi))ins=!ins}}return ins}
+function envLineDist(x,y,parts){let m=Infinity;for(const l of parts)for(let i=1;i<l.length;i++){let ax=l[i-1][0],ay=l[i-1][1],dx=l[i][0]-ax,dy=l[i][1]-ay,L=dx*dx+dy*dy,t=L?Math.max(0,Math.min(1,((x-ax)*dx+(y-ay)*dy)/L)):0;m=Math.min(m,Math.hypot(ax+t*dx-x,ay+t*dy-y))}return m}
+const ENV_SHOPS=['shop','grocery','clothing_store','restaurant','cafe','fast_food','bar','pub','bank','pharmacy','ice_cream','bakery','beer','alcohol_shop','jewelry','books','library','hairdresser','cosmetics','optician','shoes','department_store','mall','theatre','cinema','town_hall','post'];
+async function envClassify(lat,lon){
+ let n=2**ENV_Z,latR=lat*Math.PI/180,fx=(lon+180)/360*n,fy=(1-Math.log(Math.tan(latR)+1/Math.cos(latR))/Math.PI)/2*n,tx=Math.floor(fx),ty=Math.floor(fy);
+ let mPerTile=40075016.686*Math.cos(latR)/n,m=ENV_R/mPerTile,ex=fx-tx,ey=fy-ty,tiles=[[tx,ty]];
+ if(ex<m)tiles.push([tx-1,ty]);if(ex>1-m)tiles.push([tx+1,ty]);if(ey<m)tiles.push([tx,ty-1]);if(ey>1-m)tiles.push([tx,ty+1]);
+ let st={buildings:0,shops:0,res:false,com:false,ind:false,retail:false,wood:false,farm:false,grass:false,park:false,majorRoad:Infinity,rail:Infinity,stop:Infinity,loaded:0};
+ for(const [x,y] of tiles){let t=await envTile(ENV_Z,x,y);if(!t)continue;st.loaded++;
+  for(const L of Object.values(t)){let E=L.extent||4096,upm=E/mPerTile,px=(fx-x)*E,py=(fy-y)*E,R=ENV_R*upm;
+   for(const f of L.features){let c=f.props.class,sc=f.props.subclass;if(!f.parts.length)continue;
+    if(L.name==='building'&&f.type===3){let ring=f.parts[0],cx=0,cy=0;ring.forEach(q=>{cx+=q[0];cy+=q[1]});cx/=ring.length;cy/=ring.length;if(Math.hypot(cx-px,cy-py)<=R)st.buildings++}
+    else if(L.name==='landuse'&&f.type===3){if(envPip(px,py,f.parts)){if(c==='residential'||c==='suburb'||c==='neighbourhood')st.res=true;else if(c==='commercial')st.com=true;else if(c==='industrial')st.ind=true;else if(c==='retail')st.retail=true}}
+    else if(L.name==='landcover'&&f.type===3){if(envPip(px,py,f.parts)){if(c==='wood')st.wood=true;else if(c==='farmland')st.farm=true;else if(c==='grass'||c==='wetland')st.grass=true}}
+    else if(L.name==='park'&&f.type===3){if(envPip(px,py,f.parts))st.park=true}
+    else if(L.name==='transportation'&&f.type===2){let d=envLineDist(px,py,f.parts)/upm;
+     if(['motorway','trunk','primary','secondary','tertiary'].includes(c))st.majorRoad=Math.min(st.majorRoad,d);else if(c==='rail'||c==='transit')st.rail=Math.min(st.rail,d)}
+    else if(L.name==='poi'&&f.type===1){let q=f.parts[0][0];if(!q)continue;let d=Math.hypot(q[0]-px,q[1]-py)/upm;
+     if(c==='bus'||c==='railway'||['bus_stop','bus_station','station','halt','tram_stop'].includes(sc))st.stop=Math.min(st.stop,d);else if(d<=ENV_R&&ENV_SHOPS.includes(c))st.shops++}
+   }}}
+ if(!st.loaded)return null;
+ let env;
+ if(st.shops>=6||st.retail||(st.com&&st.buildings>=10))env='Innenstadt';
+ else if(st.ind||st.com)env='Gewerbegebiet';
+ else if(st.park&&st.buildings<8)env='Park/Grünanlage';
+ else if(st.res||st.buildings>=10)env='Wohngebiet';
+ else if(st.buildings>=2)env='Ortsrand';
+ else if(st.wood)env='Wald';
+ else if(st.farm||st.grass)env='Feld/Wiese';
+ else env='offenes Gelände';
+ return {env,majorRoad:st.majorRoad,rail:st.rail,stop:st.stop,buildings:st.buildings,shops:st.shops};
+}
+function envTransitionTip(a,b){let ua=envIsUrban(a),ub=envIsUrban(b);
+ if(ua&&!ub)return (b==='Wald'?'Waldrand: Im Wald bleibt Geruch bodennah und hält länger, am Rand verwirbelt er oft. ':'Ortsausgang: ')+'Wind wirkt jetzt ungebremst, Geruch kann deutlich seitlich der Spur liegen; Feldränder, Hecken, Gräben und Wege sind Sammelkanten. Dem Hund Zeit zur Neuorientierung geben, das Tempo kann steigen – Leine länger lassen. Bei Wärme fehlt Schatten: Wasser anbieten.';
+ if(!ua&&ub)return 'Ortseingang: Straßen und Verkehr – Querungen sichern, Leine kürzer. Wind wird zwischen Häusern kanalisiert, Fremdgeruch nimmt zu; Entscheidungen dauern oft länger.';
+ return {'Innenstadt':'Innenstadt: viele Passanten und Fremdgerüche, Lärm – Hund abschirmen, Tempo drosseln; Geruch sammelt sich in Eingängen und an Fassaden.','Gewerbegebiet':'Gewerbegebiet: breite Straßen, Lkw-Verkehr, große versiegelte Flächen – Geruch liegt eher an Rändern, Zäunen und Grünstreifen.','Park/Grünanlage':'Grünanlage: Vegetation hält Geruch gut, aber viele Hunde und Spaziergänger – auf Ablenkung achten.','Wohngebiet':'Wohngebiet: Vorgärten, Hecken und Zäune halten Geruch; Haushaltsgerüche und Tiere lenken ab.','Ortsrand':'Ortsrand: lockere Bebauung, wechselnde Windverhältnisse zwischen Häusern und Freiflächen.','Wald':'Wald: Geruch bodennah und langlebig, Wind gedämpft; nach dem Trail Zecken absuchen.','Feld/Wiese':'Feld/Wiese: Wind wirkt ungebremst, Geruch oft leeseitig versetzt; Kanten und Wege beachten.','offenes Gelände':'Offenes Gelände: Wind wirkt ungebremst, Geruch oft leeseitig versetzt.'}[b]||'';
+}
+function envStatus(msg){let el=$('#envStatusTxt');if(!el)return;let m=envMode();
+ if(msg){el.textContent=msg;return}
+ if(m==='off'){el.textContent='Umfelderkennung aus';return}
+ el.textContent=S.envNow?'Umfeld: '+S.envNow+' ('+(S.envSrc||'')+')':(m==='manual'?'Umfeld: manuell über die Schaltfläche':'Umfeld: wird nach Trailstart erkannt');
+}
+function envAlert(title,text,important){let b=$('#envBanner');if(!b)return;
+ b.innerHTML='<b>'+esc(title)+'</b>'+(text?'<br>'+esc(text):'')+'<div style="margin-top:6px"><button class="btn" onclick="this.closest(\'#envBanner\').style.display=\'none\'">OK</button></div>';b.style.display='block';
+ if(S.envVibrate!==false){try{navigator.vibrate&&navigator.vibrate(important?[150,80,150]:[120])}catch(e){}}
+}
+function envApply(env,src,initial){let prev=S.envNow;S.envNow=env;S.envSrc=src;save();
+ if(initial)stamp('Umfeld beim Start: '+env,src);
+ else if(prev&&prev!==env){stamp('Umfeld: '+prev+' → '+env,src);envAlert('Umfeld: '+prev+' → '+env,envTransitionTip(prev,env),true)}
+ envStatus();try{wxTipsRender()}catch(e){}
+}
+function envReset(){envLast=null;envPending=null;envLastCheck=0;S.envNow=(['manual','off'].includes(envMode())?(S.startEnv||null):null);S.envSrc=S.envNow?'Startumfeld':'';let b=$('#envBanner');if(b)b.style.display='none';}
+async function envLiveCheck(force){
+ if(!S.trackRunning&&!force)return;let m=envMode();if(m==='off'||m==='manual')return;
+ let last=(S.track||[]).slice(-1)[0];if(!last||envBusy)return;if(last.acc&&last.acc>60)return;
+ if(!force&&envLast&&envLast.pos&&hav(envLast.pos,last)<80&&Date.now()-envLastCheck<90000)return;
+ envBusy=true;envLastCheck=Date.now();
+ try{let c=await envClassify(last.lat,last.lon);
+  if(!c){envStatus('Umfeld: keine Kartendaten'+(m==='cache'?' für diesen Bereich gespeichert':' erreichbar')+' – bei Bedarf „Umfeld wechselt“ nutzen.');return}
+  c.pos={lat:last.lat,lon:last.lon};
+  if(!S.envNow)envApply(c.env,'Kartendaten',true);
+  else if(c.env!==S.envNow){if(envPending===c.env){envApply(c.env,'Kartendaten');envPending=null}else envPending=c.env}
+  else envPending=null;
+  let now=Date.now();
+  if(c.majorRoad<=25&&now-envRoadWarnAt>180000){envRoadWarnAt=now;envAlert('Hauptstraße in der Nähe','Querung sichern: vor dem Bordstein anhalten, Leine kurz. Verkehr verwirbelt Geruch entlang der Fahrbahn.',false);stamp('Hauptstraße in der Nähe','Kartendaten')}
+  if((c.stop<=40||c.rail<=40)&&now-envStopWarnAt>300000){envStopWarnAt=now;envAlert(c.rail<=40?'Bahnlinie in der Nähe':'Haltestelle in der Nähe',c.rail<=40?'Gleise nie betreten, Hund kurz führen.':'Endet der Trail hier abrupt, kann ein Einstieg vorliegen – Uhrzeit notieren.',false);stamp(c.rail<=40?'Bahnlinie in der Nähe':'Haltestelle in der Nähe','Kartendaten')}
+  envLast=c;if(!envPending)envStatus();
+ }catch(e){}finally{envBusy=false}
+}
+function envManual(){
+ if(document.getElementById('envModal'))return;
+ let m=document.createElement('div');m.id='envModal';m.className='pmodal noprint';
+ m.innerHTML='<div class="box" role="dialog" aria-modal="true"><h2 style="margin-top:0">Umfeld wechselt</h2><p class="muted">Aktuelles Umfeld wählen – die Handling-Tipps passen sich an.</p><div class="chips">'+ENV_LIST.map(e=>'<button type="button" class="chip" data-env="'+e+'">'+e+'</button>').join('')+'</div><div class="row" style="margin-top:8px"><button class="btn" data-ev="Straßenquerung">Straßenquerung</button><button class="btn" data-ev="Haltestelle / Bahn">Haltestelle / Bahn</button><button class="btn" data-x="1">Schließen</button></div></div>';
+ document.body.appendChild(m);
+ m.onclick=ev=>{let t=ev.target;if(t===m||t.dataset.x){m.remove();return}
+  if(t.dataset.env){m.remove();let prev=S.envNow;if(!prev){S.envNow=t.dataset.env;S.envSrc='manuell';save();stamp('Umfeld: '+t.dataset.env,'manuell');envStatus();wxTipsRender()}else envApply(t.dataset.env,'manuell');envPending=null}
+  if(t.dataset.ev){m.remove();stamp(t.dataset.ev,'manuell');if(t.dataset.ev==='Straßenquerung')envAlert('Straßenquerung','Vor dem Bordstein anhalten, Leine kurz, Verkehr sichern.',false);else envAlert('Haltestelle / Bahn','Gleise nie betreten. Endet der Trail hier, Uhrzeit für einen möglichen Einstieg notieren.',false)}};
+}
+async function envSuggestStart(lat,lon){
+ if(S.startEnv||['manual','off'].includes(envMode()))return;
+ try{let c=await envClassify(lat,lon);if(!c)return;let v=c.env==='offenes Gelände'?'ländlich':c.env;
+  S.startEnv=v;save();let el=document.querySelector('[data-k="startEnv"]');if(el)el.value=v;wxTipsRender();
+  let st=$('#weatherStatus');if(st)st.textContent+=' · Startumfeld erkannt: '+v+' (bitte prüfen)';}catch(e){}
+}
+async function envAnalyzeTrack(pts){
+ if(!pts||pts.length<2)return null;let m=envMode();if(m==='off'||m==='manual')return null;
+ let samples=[pts[0]],acc=0;for(let i=1;i<pts.length;i++){acc+=hav(pts[i-1],pts[i]);if(acc>=60){samples.push(pts[i]);acc=0}}
+ if(samples[samples.length-1]!==pts[pts.length-1])samples.push(pts[pts.length-1]);
+ if(samples.length>80){let st=samples.length/80;samples=Array.from({length:80},(_,i)=>samples[Math.floor(i*st)])}
+ let segs=[],roads=0,stops=0,prevRoad=false,dist=0,prev=null,miss=0;
+ for(const p of samples){if(prev)dist+=hav(prev,p);prev=p;let c=await envClassify(p.lat,p.lon);if(!c){miss++;continue}
+  let last=segs[segs.length-1];if(last&&last.env===c.env)last.to=dist;else{if(last)last.to=dist;segs.push({env:c.env,from:dist,to:dist})}
+  let nr=c.majorRoad<=20;if(nr&&!prevRoad)roads++;prevRoad=nr;if(c.stop<=40||c.rail<=40)stops++}
+ if(!segs.length)return {segs:[],roads:0,stops:0,miss,total:dist};
+ return {segs,roads,stops,miss,total:Math.round(dist)};
+}
+function envFmtM(v){v=Math.round(v/10)*10;return v>=1000?(v/1000).toFixed(1).replace('.',',')+' km':v+' m'}
+function envSegText(r){if(!r||!r.segs||!r.segs.length)return '';
+ let t=r.segs.map(s=>envFmtM(s.from)+'–'+envFmtM(s.to)+' '+s.env).join(' · ');
+ if(r.roads)t+=' · Hauptstraße berührt: '+r.roads+'×';if(r.stops)t+=' · Haltestelle/Bahn in der Nähe';
+ if(r.miss)t+=' (für '+r.miss+' Messpunkte keine Kartendaten)';return t}
+async function envAnalyzeRef(){
+ let ref=S.referenceTrack||[];if(ref.length<2)return alert('Es ist noch kein Spurleger-Track geladen.');
+ if(S.refMode==='blind'&&!S.trailEnded)return alert('Im Blindmodus erst nach „Trail beenden / Vergleich freigeben“ möglich – sonst würde der Trailverlauf verraten.');
+ if(['manual','off'].includes(envMode()))return alert('Die Umfelderkennung steht auf „'+(envMode()==='off'?'Aus':'Manuell')+'“. Bitte unter „Einstellungen Umfelderkennung“ umstellen.');
+ let el=$('#envRouteInfo');if(el)el.textContent='Trailverlauf wird ausgewertet …';
+ let r=await envAnalyzeTrack(ref);S.envRef=r;save();envRouteRender();
+}
+function envRouteRender(){let el=$('#envRouteInfo');if(!el)return;let parts=[];
+ if(S.envRef&&(S.refMode!=='blind'||S.trailEnded)){let t=envSegText(S.envRef);parts.push('<b>Spurleger-Track:</b> '+(t?esc(t):'keine Kartendaten verfügbar'))}
+ if(S.envTrack){let t=envSegText(S.envTrack);parts.push('<b>Eigener Track:</b> '+(t?esc(t):'keine Kartendaten verfügbar'))}
+ el.innerHTML=parts.join('<br>')}
+async function envAfterTrail(){
+ envPending=null;
+ try{let r=await envAnalyzeTrack(S.track);if(!r)return;S.envTrack=r;
+  let map={'Innenstadt':'Innenstadt','Wohngebiet':'Wohngebiet','Ortsrand':'Wohngebiet','Gewerbegebiet':'Gewerbe','Feld/Wiese':'Wiese/Feld','offenes Gelände':'Wiese/Feld','Wald':'Wald'};
+  S.chips=S.chips||{};let cur=S.chips.p_env||[];
+  r.segs.forEach(s=>{let c=map[s.env];if(c&&!cur.includes(c))cur.push(c)});
+  if(r.roads&&!cur.includes('Straßenquerung'))cur.push('Straßenquerung');if(r.stops&&!cur.includes('Bahnhof/ÖPNV'))cur.push('Bahnhof/ÖPNV');
+  S.chips.p_env=cur;save();loadChips();envRouteRender();
+ }catch(e){}
+}
+function envInitUI(){let a=$('#envModeSel'),b=$('#envVibSel');if(a)a.value=envMode();if(b)b.value=S.envVibrate===false?'0':'1';envStatus();envRouteRender()}
+
+
+/* ===== GPS-Störungen ohne blockierende Meldefenster ===== */
+var gpsErrShown=false;
+function gpsError(e){
+ let code=e&&e.code,msg=code===1?'Standortfreigabe verweigert – bitte im Browser erlauben oder Trackmodus „Nur Zeit“ nutzen.':code===3?'GPS-Signal verzögert – Aufzeichnung läuft weiter, sobald wieder Empfang besteht.':'GPS-Signal vorübergehend nicht verfügbar – Aufzeichnung läuft weiter, sobald wieder Empfang besteht.';
+ let el=$('#trackStatus');if(el)el.textContent='⚠ '+msg;
+ if(code===1&&!gpsErrShown){gpsErrShown=true;alert(msg)}else rhsHinweis('⚠ '+msg);
+}
+
 /* ===== Impressum / Datenschutz ===== */
 function legalOpen(id){let secs=$$('section[data-page]');let i=secs.findIndex(x=>x.dataset.page==='Hilfe');if(i>=0)show(i);let d=document.getElementById(id);if(d){d.open=true;setTimeout(()=>d.scrollIntoView({behavior:'smooth'}),50)}return false}
 
@@ -644,52 +841,90 @@ function articleDel(i){let a=(S.articles||[])[i];if(!a||!confirm('„'+a.name+'�
 /* ===== Ergänzung: Wetter-Tipps für das Handling ===== */
 function wxNum(v){let n=parseFloat(String(v??'').replace(',','.'));return Number.isFinite(n)?n:null}
 function wxDirName(d){return ['N','NO','O','SO','S','SW','W','NW'][Math.round(((d%360)+360)%360/45)%8]}
-function wxTipsList(){
+const URBAN_ENV=['Innenstadt','Wohngebiet','Ortskern / Dorf','Gewerbegebiet','Parkplatz','Bahnhof/ÖPNV','Gebäude','Ortsrand','Park/Grünanlage'];
+function wxTipsGroups(){
  let T=wxNum(S.wxTemp),H=wxNum(S.wxHumidity),W=wxNum(S.wxWind),G=wxNum(S.wxGust),P=wxNum(S.wxPrecip),D=wxNum(S.wxWindDir),code=wxNum(S.wxCode);
- if(T==null&&W==null&&P==null&&trailAgeHours()==null)return [];
- let out=[],h=new Date().getHours(),env=S.startEnv||'',ageH=trailAgeHours(),urban=['Wohngebiet','Innenstadt','Parkplatz','Bahnhof/ÖPNV','Gebäude'].includes(env);
- if(T!=null&&T>=28)out.push('<b style="color:#b91c1c">⚠ Sicherheit Hund – Hitze ('+T+' °C):</b> Hitzschlaggefahr. Trail möglichst in die Morgen-/Abendstunden legen oder kurz halten, alle 10–15 min Wasser anbieten, Schatten nutzen. Asphalt mit dem Handrücken prüfen (5 Sekunden nicht aushaltbar = zu heiß für Pfoten). Warnzeichen: starkes Hecheln mit weit herausgestreckter Zunge, taumeln, dunkelrotes Zahnfleisch, Erbrechen – sofort abbrechen, in den Schatten, Körper mit Wasser kühlen (nicht eiskalt), Tierarzt.');
- if(T!=null&&T<=-5)out.push('<b style="color:#b91c1c">⚠ Sicherheit Hund – Frost ('+T+' °C):</b> Pfoten vor Streusalz und Eis schützen (Pfotenschutz/Balsam), nach dem Trail abspülen. Bei kurzhaarigen oder kleinen Hunden Mantel in Pausen; zittern, hochgezogene Pfoten oder Verlangsamung sind Abbruchzeichen. Auf vereiste Flächen und Gewässer achten.');
- out.push('<b>💧 Hundewasser:</b> Wasser und Napf für den Hund mitführen'+(T!=null&&T>=18?' – bei '+T+' °C spätestens nach 20–30 min sowie am Ende anbieten':' – auch bei kühlem Wetter nach dem Trail anbieten')+'; Trinken hält die Nase feucht und die Sucharbeit stabil.');
- if(ageH!=null){
-  if(ageH<=0.5)out.push('<b>Trailalter ca. '+fmtHours(ageH)+' (sehr frisch):</b> Starker Geruch, Hund kann sehr schnell und weiträumig arbeiten; Tempo nicht bremsen, aber Leine so führen, dass Entscheidungen an Kreuzungen sichtbar bleiben. Bei Übungen ohne Blindmodus nicht in den Geruchsvorlauf hineinlaufen.');
-  else if(ageH<=3)out.push('<b>Trailalter ca. '+fmtHours(ageH)+':</b> Gut bearbeitbare Spur; Verlagerungen durch den Wind seit dem Legen sind wahrscheinlich – Windrichtung beim Legen und jetzt vergleichen.');
-  else if(ageH<=12)out.push('<b>Trailalter ca. '+fmtHours(ageH)+' (mehrere Stunden):</b> Geruch hat sich verteilt und liegt oft breiter und leeseitig; dem Hund an Kreuzungen mehr Zeit lassen, Nase-hoch-Phasen sind normal.'+(T!=null&&T>=22?' Bei Wärme und Sonne ist zusätzlich mit Abbau zu rechnen – Schattenseiten und Vegetation bevorzugt prüfen lassen.':''));
-  else if(ageH<=36)out.push('<b>Trailalter ca. '+fmtHours(ageH)+' (Cold Trail):</b> Geruch ist gealtert; Entscheidungen fallen meist langsamer, Negativ-Anzeigen ernst nehmen, Hund ruhig und ohne Druck arbeiten lassen. Feuchte, kühle Bedingungen begünstigen, Sonne und Wind seit dem Legen verschlechtern die Lage.');
-  else out.push('<b>Trailalter ca. '+fmtHours(ageH)+' (sehr alt):</b> Anspruchsvolle Aufgabe; lange Ausarbeitungsphasen und Bögen sind zu erwarten, Erfolg hängt stark von Feuchte und Vegetation ab. Nicht als Maßstab für die Tagesform werten.');
-  if(P!=null&&P>2&&ageH>2)out.push('<b>Regen seit dem Legen:</b> Bei stärkerem Regen kann Geruch von befestigten Flächen abgespült sein, in Vegetation hält er sich besser – Übergänge auf Grünstreifen beachten.');
+ let live=S.trackRunning&&S.envNow,env=(live?S.envNow:(S.startEnv||''))||'',ageH=trailAgeHours(),sf=(S.chips?.startFactors||[]),pe=(S.chips?.p_env||[]);
+ const noWx=T==null&&W==null&&P==null&&H==null;
+ let urban=URBAN_ENV.includes(env)||(!env&&(sf.some(x=>['Kreuzung','Parkplatz','Fahrzeug möglich','ÖPNV möglich','Wohnumfeld VP','starker Verkehr','Windkanal/Bebauung','Menschenmenge'].includes(x))||pe.some(x=>['Wohngebiet','Innenstadt','Gewerbe','Parkplatz','Gebäude','Bahnhof/ÖPNV','Straßenquerung'].includes(x))));
+ let open=['ländlich','Feld/Wiese','Wald','offenes Gelände'].includes(env);
+ let now=new Date(),h=now.getHours(),wd=now.getDay(),rush=wd>=1&&wd<=5&&((h>=6&&h<9)||(h>=15&&h<19));
+ let traffic=S.traffic||'',heavy=['hoch','sehr hoch'].includes(traffic)||sf.includes('starker Verkehr');
+ let oepnv=env==='Bahnhof/ÖPNV'||sf.includes('ÖPNV möglich'),cars=env==='Parkplatz'||sf.includes('Fahrzeug möglich');
+ let G1=[],G2=[],G3=[],G4=[];
+ const hot=T!=null&&T>=28,cold=T!=null&&T<=-5;
+ // --- Sicherheit ---
+ if(hot)G1.push('<b style="color:#b91c1c">⚠ Hitze ('+T+' °C):</b> Hitzschlaggefahr. Trail möglichst in die Morgen-/Abendstunden legen oder kurz halten, alle 10–15 min Wasser anbieten, Schatten nutzen. Warnzeichen: starkes Hecheln mit weit herausgestreckter Zunge, taumeln, dunkelrotes Zahnfleisch, Erbrechen – sofort abbrechen, in den Schatten, Körper mit Wasser kühlen (nicht eiskalt), Tierarzt.');
+ if((hot||(T!=null&&T>=25))&&!open)G1.push('<b style="color:#b91c1c">⚠ Pfoten auf Asphalt, Pflaster, Kanaldeckeln:</b> Belag mit dem Handrücken prüfen – ist er 5 Sekunden nicht auszuhalten, ist er zu heiß. Schattenseite der Straße, Grünstreifen und Gehwegränder nutzen; Metallabdeckungen und dunkle Flächen meiden.');
+ if(cold)G1.push('<b style="color:#b91c1c">⚠ Frost ('+T+' °C):</b> Pfoten vor Eis schützen, bei kurzhaarigen oder kleinen Hunden Mantel in Pausen; zittern, hochgezogene Pfoten oder Verlangsamung sind Abbruchzeichen.'+(urban?' In Ortslage ist mit <b>Streusalz</b> und Splitt zu rechnen: Pfotenschutz oder Balsam, nach dem Trail abspülen.':' Auf vereiste Flächen und Gewässer achten.'));
+ else if(urban&&T!=null&&T<=2)G1.push('<b>Glätte und Streusalz:</b> In Ortslage Pfoten nach dem Trail abspülen; auf glatten Gehwegen Tempo des Hundes kontrollieren.');
+ if(urban){
+  G1.push('<b style="color:#b91c1c">⚠ Straßenverkehr:</b> Der Hund folgt dem Geruch auch über die Fahrbahn. An Straßen die Leine kurz nehmen und vor dem Bordstein anhalten; Querungen sichert der Hundeführer bzw. ein Sicherungshelfer, nicht der Hund. Warnweste bzw. Kenndecke für Team und Hund, in der Dämmerung Leuchtmittel.'+(heavy||rush?' Heute mit viel Verkehr rechnen'+(rush?' (Berufsverkehr)':'')+' – Querungen besonders sorgfältig sichern.':''));
+  if(oepnv)G1.push('<b style="color:#b91c1c">⚠ Bahn und Haltestellen:</b> Gleise und Bahnanlagen nie betreten, am Bahnsteig Abstand zur Kante halten; an Haltestellen auf Busse und Straßenbahnen achten.');
+  G1.push('<b>Scherben und Müll:</b> In Innenstädten, an Haltestellen und Parkplätzen Boden auf Glas, Essensreste und Giftköder achten; Hund nach dem Trail auf Schnittverletzungen prüfen.');
  }
+ G1.push('<b>💧 Hundewasser:</b> Wasser und Napf mitführen'+(T!=null&&T>=18?' – bei '+T+' °C spätestens nach 20–30 min sowie am Ende anbieten':' – auch bei kühlem Wetter nach dem Trail anbieten')+'; Trinken hält die Nase feucht und die Sucharbeit stabil.'+(urban?' In der Stadt sind Pfützen und Brunnen oft verunreinigt – eigenes Wasser verwenden.':''));
+ // --- Wetter ---
+ if(noWx)G2.push('<b>Kein Wetter abgerufen:</b> Die Tipps beruhen nur auf Trailalter und Umfeld. Wind vor Ort selbst prüfen (Haare, Rauch, Laub, Fahnen), Temperatur einschätzen; bei warmem Wetter Asphalt mit dem Handrücken prüfen und auf Hitzezeichen beim Hund achten. Das Wetter kann jederzeit unter „Start“ abgerufen oder von Hand eingetragen werden.');
  if(T!=null){
-  if(T>=25)out.push('<b>Hitze ('+T+' °C):</b> Wasser für den Hund mitführen, Pausen im Schatten einplanen, Hecheln und Suchintensität beobachten; Trailzeit ggf. kürzen. Über heißem Asphalt kann Geruch schnell aufsteigen – der Hund arbeitet oft an Kanten, Grün- und Schattenstreifen.');
-  else if(T>=18)out.push('<b>Warm ('+T+' °C):</b> Aufsteigende Warmluft trägt Geruch nach oben und seitlich; Hund bei Nasehoch-Phasen arbeiten lassen, Wasserpause nach längeren Abschnitten.');
-  else if(T<=0)out.push('<b>Frost ('+T+' °C):</b> Geruch bleibt bodennah und liegt oft dicht an der gelaufenen Linie; Hund kann sehr geradlinig arbeiten. Gefrorener Boden hält Geruch schlechter fest, Übergänge in Schnee/Reif beachten. Pfoten prüfen (Streusalz).');
-  else if(T<=8)out.push('<b>Kühl ('+T+' °C):</b> Günstige Bedingungen – Geruch bleibt bodennah und stabil; Hund ruhig arbeiten lassen, wenig Einfluss nehmen.');
+  if(T>=25)G2.push('<b>Hitze ('+T+' °C):</b> Pausen im Schatten, Hecheln und Suchintensität beobachten; Trailzeit ggf. kürzen.'+(urban?' Über aufgeheiztem Asphalt steigt Geruch rasch auf; er sammelt sich auf der Schattenseite, an Hauswänden, in Hauseingängen und an Grünstreifen – dort dem Hund Zeit geben.':' Geruch steigt über besonnten Flächen auf; der Hund arbeitet oft an Schatten- und Vegetationskanten.'));
+  else if(T>=18)G2.push('<b>Warm ('+T+' °C):</b> Aufsteigende Warmluft trägt Geruch nach oben und seitlich; Nase-hoch-Phasen zulassen, Wasserpause nach längeren Abschnitten.');
+  else if(T<=0)G2.push('<b>Frost ('+T+' °C):</b> Geruch bleibt bodennah und liegt oft dicht an der gelaufenen Linie. Gefrorener Boden hält Geruch schlechter fest; Übergänge zu Schnee und Reif beachten.');
+  else if(T<=8)G2.push('<b>Kühl ('+T+' °C):</b> Günstige Bedingungen – Geruch bleibt bodennah und stabil; Hund ruhig arbeiten lassen.');
  }
  if(H!=null){
-  if(H>=85)out.push('<b>Hohe Luftfeuchte ('+H+' %):</b> Geruch hält sich gut und breit; erwarten Sie eher flächiges Ausarbeiten als scharfe Kanten.');
-  else if(H<=40)out.push('<b>Trockene Luft ('+H+' %):</b> Geruchsträger trocknen schneller aus, besonders auf Asphalt und in der Sonne; Zeit bis zur Entscheidung kann länger werden.');
+  if(H>=85)G2.push('<b>Hohe Luftfeuchte ('+H+' %):</b> Geruch hält sich gut und breit; eher flächiges Ausarbeiten als scharfe Kanten.');
+  else if(H<=40)G2.push('<b>Trockene Luft ('+H+' %):</b> Geruchsträger trocknen schneller aus, besonders auf Asphalt und in der Sonne; Entscheidungen können länger dauern.');
  }
  if(W!=null){
-  let dir=D!=null?' aus '+wxDirName(D)+' ('+Math.round(D)+'°)':'';
-  if(W>=25||(G!=null&&G>=40))out.push('<b>Starker Wind'+dir+', '+W+' km/h'+(G?' (Böen '+G+')':'')+':</b> Geruch wird deutlich in Windrichtung verlagert – der Hund arbeitet oft mehrere Meter leeseitig parallel zur Spur. Bei Kreuzungen dem Hund Zeit geben; Abweichung ist hier kein Fehler. Leine kürzer, aber ohne Zug.');
-  else if(W>=12)out.push('<b>Mäßiger Wind'+dir+', '+W+' km/h:</b> Mit seitlicher Verlagerung des Geruchs rechnen; Hund kann leeseitig der Spur laufen, Hindernisse (Hecken, Hauswände) sammeln Geruch auf der Leeseite.');
-  else out.push('<b>Wenig Wind ('+W+' km/h):</b> Geruch liegt nahe an der Spur; Kreuzungsentscheidungen sind meist klarer lesbar.');
+  let dir=D!=null?' aus '+wxDirName(D)+' ('+Math.round(D)+'°)':'',gs=G?' (Böen '+G+')':'';
+  if(urban){
+   G2.push('<b>Wind in Ortslage'+dir+', gemessen '+W+' km/h'+gs+':</b> Der Wert stammt aus einem Wettermodell für freies Gelände in 10 m Höhe. Zwischen Gebäuden weht es meist schwächer, in Straßenschluchten und Durchgängen dagegen kanalisiert und böig; an Hausecken entstehen Wirbel, hinter Gebäuden Windschatten. Die Windrichtung in der Straße kann deutlich von der Modellrichtung abweichen – vor Ort prüfen (Haare, Rauch, Laub, Fahne).'+(W>=25||(G!=null&&G>=40)?' Bei diesem Wind wird Geruch auf Querstraßen und Plätze verblasen; der Hund kann auf der Leeseite der Straße oder um Ecken herum arbeiten.':''));
+  }else if(W>=25||(G!=null&&G>=40))G2.push('<b>Starker Wind'+dir+', '+W+' km/h'+gs+':</b> Geruch wird deutlich in Windrichtung verlagert – der Hund arbeitet oft mehrere Meter leeseitig parallel zur Spur. Abweichung ist hier kein Fehler; Leine kürzer, aber ohne Zug.');
+  else if(W>=12)G2.push('<b>Mäßiger Wind'+dir+', '+W+' km/h:</b> Seitliche Verlagerung des Geruchs; Hecken und Waldränder sammeln Geruch auf der Leeseite.');
+  else G2.push('<b>Wenig Wind ('+W+' km/h):</b> Geruch liegt nahe an der Spur; Kreuzungsentscheidungen sind meist klarer lesbar.');
  }
- if(P!=null&&P>0)out.push('<b>Niederschlag ('+P+' mm):</b> Leichter Regen hält Geruch am Boden und verbessert oft die Arbeit; bei Starkregen wird Geruch weggespült, dann Entscheidungen großzügiger prüfen. Hund und Ausrüstung vor Auskühlung schützen.');
- if(code!=null&&[45,48].includes(code))out.push('<b>Nebel:</b> Sehr feuchte, ruhige Luft – Geruch hält sich lange und bodennah; gute Bedingungen, aber Sichtkontakt zum Helfer sichern.');
- if(h>=10&&h<=16&&T!=null&&T>=15)out.push('<b>Tageszeit (Mittag/Nachmittag):</b> Thermik hebt Geruch von besonnten Flächen ab; in Schatten, Senken und an Vegetationskanten sammelt er sich wieder – dort dem Hund Zeit geben.');
- if((h<9||h>=19)&&T!=null&&T<20)out.push('<b>Tageszeit (Morgen/Abend):</b> Abkühlende Luft sinkt und fließt hangabwärts; Geruch kann talwärts oder in Senken abwandern.');
- if(urban)out.push('<b>Bebauung ('+env+'):</b> Häuserschluchten kanalisieren Wind, Geruch sammelt sich in Toreinfahrten, an Hauswänden und parkenden Fahrzeugen; Hund darf Fahrzeuge prüfen – als Hypothese notieren, nicht korrigieren.');
- else if(env==='ländlich')out.push('<b>Offenes Gelände:</b> Wind wirkt ungebremst, Waldränder und Hecken sind typische Sammelkanten; bei Feld-/Waldübergang auf Verhaltensänderung achten.');
- if(S.wxLocal)out.push('<b>Eigene Beobachtung vor Ort:</b> '+esc(S.wxLocal)+' – bodennahe Luftbewegung geht vor Modellwetter.');
- return out;
+ if(P!=null&&P>0)G2.push('<b>Niederschlag ('+P+' mm):</b> Leichter Regen hält Geruch am Boden und verbessert oft die Arbeit; Starkregen spült ihn weg.'+(urban?' Auf versiegelten Flächen läuft Wasser mit Geruch in Rinnstein, Gossen und Gullys – der Hund kann dort Geruch finden, der nicht auf der Laufspur liegt. Überdachte Bereiche (Arkaden, Haltestellen, Hauseingänge) bleiben trocken und halten Geruch länger.':' Hund und Ausrüstung vor Auskühlung schützen.'));
+ if(code!=null&&[45,48].includes(code))G2.push('<b>Nebel:</b> Feuchte, ruhige Luft – Geruch hält sich lange und bodennah; Sichtkontakt zum Helfer sichern'+(urban?', im Verkehr besonders auf Sichtbarkeit achten.':'.'));
+ if(h>=10&&h<=16&&T!=null&&T>=15)G2.push('<b>Tageszeit (Mittag/Nachmittag):</b> Thermik hebt Geruch von besonnten Flächen ab'+(urban?'; die Sonnenseite der Straße ist oft „leer“, die Schattenseite und Hausfassaden halten Geruch.':'; in Schatten, Senken und an Vegetationskanten sammelt er sich wieder.'));
+ if(urban&&(h>=18||h<6)&&T!=null&&T>=12)G2.push('<b>Abend in der Stadt:</b> Fassaden und Pflaster geben gespeicherte Wärme ab; an Hauswänden steigt Luft auf, Geruch kann sich an Gebäudekanten und Mauern nach oben ziehen.');
+ else if((h<9||h>=19)&&T!=null&&T<20)G2.push('<b>Tageszeit (Morgen/Abend):</b> Abkühlende Luft sinkt und fließt hangabwärts; Geruch kann in Senken'+(urban?', Unterführungen und abschüssige Straßen':'')+' abwandern.');
+ // --- Trailalter ---
+ if(ageH!=null){
+  if(ageH<=0.5)G3.push('<b>ca. '+fmtHours(ageH)+' (sehr frisch):</b> Starker Geruch, der Hund kann sehr schnell arbeiten; Tempo nicht bremsen, aber die Leine so führen, dass Entscheidungen an Kreuzungen sichtbar bleiben.'+(urban?' An Straßen trotzdem anhalten – Sicherheit vor Tempo.':''));
+  else if(ageH<=3)G3.push('<b>ca. '+fmtHours(ageH)+':</b> Gut bearbeitbare Spur; Verlagerungen durch Wind seit dem Legen sind wahrscheinlich.'+(urban?' Seit dem Legen sind Passanten und Fahrzeuge über die Spur gegangen – mehr Fremdgeruch an Kreuzungen und Gehwegen.':''));
+  else if(ageH<=12)G3.push('<b>ca. '+fmtHours(ageH)+' (mehrere Stunden):</b> Geruch hat sich verteilt und liegt breiter und leeseitig; an Kreuzungen mehr Zeit lassen, Nase-hoch-Phasen sind normal.'+(urban?' In der Stadt hält er sich vor allem an geschützten Stellen: Hauseingänge, Mauerecken, Hecken, Bordsteinkanten, abgestellte Fahrzeuge. Mitten auf viel begangenen Gehwegen ist er oft überlagert.':'')+(T!=null&&T>=22?' Bei Wärme und Sonne ist zusätzlich mit Abbau zu rechnen.':''));
+  else if(ageH<=36)G3.push('<b>ca. '+fmtHours(ageH)+' (Cold Trail):</b> Entscheidungen fallen meist langsamer, Negativ-Anzeigen ernst nehmen, ohne Druck arbeiten lassen.'+(urban?' Straßenreinigung, Regen und Verkehr seit dem Legen können Abschnitte auf versiegelten Flächen weitgehend löschen; Anschluss eher an Rändern, Grünflächen und geschützten Stellen suchen.':' Feuchte und Vegetation begünstigen, Sonne und Wind verschlechtern die Lage.'));
+  else G3.push('<b>ca. '+fmtHours(ageH)+' (sehr alt):</b> Lange Ausarbeitungsphasen und Bögen sind zu erwarten'+(urban?'; in Ortslage ist die Aufgabe durch Verkehr und Reinigung besonders anspruchsvoll':'')+'. Nicht als Maßstab für die Tagesform werten.');
+  if(P!=null&&P>2&&ageH>2)G3.push('<b>Regen seit dem Legen:</b> Von befestigten Flächen kann Geruch abgespült sein, in Vegetation hält er sich besser – Übergänge auf Grünstreifen beachten.');
+ }
+ // --- Umfeld ---
+ if(urban){
+  if(['Innenstadt','Gewerbegebiet','Ortskern / Dorf'].includes(env)||sf.includes('Windkanal/Bebauung'))G4.push('<b>Bebauung:</b> Häuserzeilen lenken Luft und Geruch entlang der Straße; Geruch sammelt sich in Toreinfahrten, Hauseingängen, Nischen, an Mauern und Bordsteinkanten. Lüftungsschächte, Hofdurchgänge und offene Türen blasen Luft und Fremdgeruch heraus.');
+  if(env==='Wohngebiet'||sf.includes('Wohnumfeld VP'))G4.push('<b>Wohngebiet:</b> Vorgärten, Hecken und Zäune halten Geruch; viele Haushaltsgerüche, Hunde und Katzen lenken ab. Ist die VP dort wohnhaft, liegt ihr Geruch auf vielen Wegen – der Hund muss die aktuelle Spur herausarbeiten; Line-up bzw. Negativ nicht vorschnell werten.');
+  G4.push('<b>Verkehr und Fahrzeuge:</b> Vorbeifahrende Autos, Busse und Bahnen verwirbeln Geruch und können ihn ein Stück die Straße entlang ziehen. Der Hund arbeitet dann oft am Fahrbahnrand, an der Reihe parkender Autos oder auf der Gegenseite.'+(heavy||rush?' Bei viel Verkehr'+(rush?' (Berufsverkehr '+(h<12?'morgens':'nachmittags')+')':'')+' sind Kreuzungsentscheidungen schwerer lesbar – mehr Zeit geben, nicht vorwegnehmen.':''));
+  if(cars)G4.push('<b>Parkplatz und Fahrzeuge:</b> Autos wirken als Geruchsfallen (unter und hinter den Fahrzeugen). Endet der Trail abrupt, ist ein Einstieg in ein Fahrzeug eine eigene Hypothese: Ort, Uhrzeit und Verhalten des Hundes festhalten, nicht als Fehler werten.');
+  if(oepnv)G4.push('<b>Haltestelle, Bus und Bahn:</b> Ein Trailende an einer Haltestelle kann einen Einstieg bedeuten. Zeitpunkt notieren und – im Einsatz – Abfahrten zu diesem Zeitpunkt klären lassen. Überdachungen halten Geruch; auf Bahnsteigen viel Fremdgeruch und Lärm.');
+  if(env==='Gebäude')G4.push('<b>Gebäude:</b> Treppenhäuser wirken als Kamin – warme Luft und Geruch steigen nach oben. Türen, Aufzüge und Klimaanlagen verteilen Geruch; Eingänge mit Luftzug gezielt anbieten.');
+  if(sf.includes('Menschenmenge')||env==='Innenstadt')G4.push('<b>Passanten und Fußgängerzone:</b> Viel Fremdgeruch und Ablenkung; Hund abschirmen, Abstand zu Menschen halten, Tempo drosseln. Lärm, Hunde, Tauben und Essensreste bedeuten Stress – Anzeichen beachten und Pausen zulassen.');
+  G4.push('<b>Untergründe:</b> Wechsel zwischen Asphalt, Pflaster, Rasen, Rinnstein und Gullydeckeln verändern die Geruchshaftung. Fugen im Pflaster und Grünstreifen halten Geruch besser als glatter Asphalt.');
+ }else if(open){
+  G4.push(env==='Wald'?'<b>Wald:</b> Geruch bleibt bodennah und hält länger, Wind ist gedämpft; am Waldrand verwirbelt er oft. Auf Wege und Wildwechsel achten, nach dem Trail Zecken absuchen.':'<b>Offenes Gelände:</b> Wind wirkt ungebremst, Geruch liegt oft leeseitig versetzt; Waldränder, Hecken, Gräben und Wege sind typische Sammelkanten. Bei Wärme fehlt Schatten – Wasser anbieten.');
+ }else if(!env){
+  G4.push('<b>Startumfeld nicht gewählt:</b> Mantrailing findet häufig in Ortslage statt. Unter „Start“ das Startumfeld (z. B. Innenstadt, Wohngebiet, Ortskern / Dorf) wählen – die Tipps passen sich dann an Bebauung und Verkehr an.');
+ }
+ if(S.wxLocal)G4.push('<b>Eigene Beobachtung vor Ort:</b> '+esc(S.wxLocal)+' – bodennahe Luftbewegung geht vor Modellwetter.');
+ let lab=(urban?'Stadt und Ortslage':'Umfeld')+(env?' – '+env+(live?' (aktuell)':''):'');
+ return [['Sicherheit für Hund und Team',G1],['Wetter',G2],['Trailalter',G3],[lab,G4]].filter(g=>g[1].length);
 }
+function wxTipsList(){return wxTipsGroups().flatMap(g=>g[1])}
 function wxTipsRender(scroll){
- let list=wxTipsList(),html=list.length?'<b>Handling-Tipps aus Wetter und Startumfeld</b><br><span class="muted">Allgemeine Faustregeln, keine Prüfung der konkreten Geruchslage vor Ort.</span><ul style="margin:6px 0 0;padding-left:18px">'+list.map(t=>'<li>'+t+'</li>').join('')+'</ul>':'';
- let a=$('#wxTips'),b=$('#wxTipsLiveBody');if(a)a.innerHTML=html;if(b)b.innerHTML=html||'<span class="muted">Noch keine Wetterdaten – unter „Start“ abrufen oder eintragen.</span>';
+ let gr=wxTipsGroups(),html=gr.length?'<b>Handling-Tipps aus Wetter, Trailalter und Umfeld</b><br><span class="muted">Allgemeine Faustregeln, keine Beurteilung der konkreten Geruchslage vor Ort.</span>'+'%GROUPS%':'';
+ const groups=live=>gr.map((g,i)=>'<details style="margin-top:8px"'+(!live||i===0?' open':'')+'><summary style="cursor:pointer;font-weight:700;color:var(--a)">'+g[0]+' ('+g[1].length+')</summary><ul style="margin:3px 0 0;padding-left:18px">'+g[1].map(t=>'<li style="margin-bottom:3px">'+t+'</li>').join('')+'</ul></details>').join('');
+ let a=$('#wxTips'),b=$('#wxTipsLiveBody');if(a)a.innerHTML=html.replace('%GROUPS%',groups(false));if(b)b.innerHTML=html.replace('%GROUPS%',groups(true));
  if(scroll&&a&&html)a.scrollIntoView({behavior:'smooth',block:'center'});
 }
-$$('[data-k^="wx"],[data-k="startEnv"],[data-k="laid"]').forEach(el=>el.addEventListener('input',()=>{wxTipsRender();trailAgeRender()}));
+$$('[data-k^="wx"],[data-k="startEnv"],[data-k="traffic"],[data-k="laid"]').forEach(el=>el.addEventListener('input',()=>{wxTipsRender();trailAgeRender()}));
 
 /* ===== Ergänzung: Live-Werte, virtueller Trainer, Spurleger-Modus ===== */
 var liveStatsTimer=null;
@@ -760,7 +995,7 @@ function protoAuto(){
   result:S.result||'',end:S.end||'',indication:S.finalIndication||'',endPool:S.endPool||'',
   durationSec:dur,hfLenM:Math.round(pLen(S.track)),dogLenM:Math.round(pLen(S.dogTrack)),refLenM:Math.round(pLen(ref)),
   devAvgM:devAvg==null?null:Math.round(devAvg),devMaxM:devMax==null?null:Math.round(devMax),counts,
-  events:evs.map(e=>({t:e.at,type:e.type,note:e.note||''})),debrief:S.debrief||'',articles:(S.articles||[]).map(a=>({name:a.name,status:a.status||'offen',note:a.note||''})),artTotal:(S.articles||[]).length,artFound:(S.articles||[]).filter(a=>a.status==='gefunden').length,wxTips:wxTipsList().map(t=>t.replace(/<[^>]+>/g,''))};
+  events:evs.map(e=>({t:e.at,type:e.type,note:e.note||''})),debrief:S.debrief||'',articles:(S.articles||[]).map(a=>({name:a.name,status:a.status||'offen',note:a.note||''})),artTotal:(S.articles||[]).length,artFound:(S.articles||[]).filter(a=>a.status==='gefunden').length,wxTips:wxTipsList().map(t=>t.replace(/<[^>]+>/g,'')),envRoute:envSegText(S.envTrack)};
 }
 function protoBuild(){
  let a=protoAuto(),ch=S.chips||{};
@@ -812,6 +1047,7 @@ function protoAutoRows(r){
   ['Streckenlängen',[r.hfLenM?'Hundeführer '+r.hfLenM+' m':'',r.dogLenM?'Hund '+r.dogLenM+' m':'',r.refLenM?'Spurleger '+r.refLenM+' m':''].filter(Boolean).join(' · ')],
   ['Abstand zum Spurleger-Track',r.devAvgM!=null?'Ø ca. '+r.devAvgM+' m, max. ca. '+r.devMaxM+' m (geometrisch, keine Leistungsnote)':''],
   ['Ereignisse',Object.entries(r.counts||{}).map(([k,v])=>v+'× '+k).join(', ')],
+  ['Durchlaufene Umgebungen',r.envRoute||''],
   ['Gegenstände',r.artTotal?r.artFound+' von '+r.artTotal+' gefunden'+((r.articles||[]).length?' ('+r.articles.map(a=>a.name+': '+a.status).join(', ')+')':''):'']];
  return rows.filter(x=>x[1]);
 }
@@ -870,7 +1106,7 @@ function protoRecHtml(r){
  rows=rows.filter(x=>x[1]);
  let h='<h2 style="margin:0 0 6px">Trainingsprotokoll Mantrailing</h2>'+protoDl(rows);
  [['Stärken',r.strengths],['Nächstes Lernziel',r.goal],['Trainer-/Helferbeobachtung',r.trainer],['Nachbesprechung',r.debrief],['Weitere Notizen',r.notes]].forEach(([t,v])=>{if(v)h+='<h3>'+t+'</h3><div style="white-space:pre-wrap;font-size:13px">'+esc(v)+'</div>'});
- if((r.wxTips||[]).length)h+='<h3>Wetter-/Geländehinweise (allgemeine Faustregeln)</h3><ul style="font-size:13px;margin:0;padding-left:18px">'+r.wxTips.map(t=>'<li>'+esc(t)+'</li>').join('')+'</ul>';
+ if((r.wxTips||[]).length)h+='<h3>Handling-Hinweise (allgemeine Faustregeln)</h3><ul style="font-size:13px;margin:0;padding-left:18px">'+r.wxTips.map(t=>'<li>'+esc(t)+'</li>').join('')+'</ul>';
  if(r.thumb)h+='<h3>Track (schematisch, nicht maßstabsgetreu)</h3><img src="'+r.thumb+'" style="max-width:100%;border:1px solid #d6d3d1;border-radius:8px" alt="Trackdarstellung">';
  if((r.events||[]).length)h+='<h3>Verlauf</h3><table class="ptab">'+r.events.map(e=>'<tr><td style="white-space:nowrap">'+new Date(e.t).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit'})+'</td><td><b>'+esc(e.type)+'</b>'+(e.note?' – '+esc(e.note):'')+'</td></tr>').join('')+'</table>';
  return h;
@@ -989,4 +1225,7 @@ function rhsTeamAnzeigen(){
   el.textContent = (t.dogName||t.handler) ? ('Verknüpfte Teamdaten: '+[t.dogName,t.handler,t.dogBreed].filter(Boolean).join(' · ')) : 'Noch keine Teamdaten aus der RH-App-Familie übernommen.';
 }
 document.addEventListener('DOMContentLoaded',()=>{ try{ rhsTeamAnzeigen(); }catch(e){} });
+
+/* ===== Programmstart – erst nach allen Definitionen ===== */
+pages();bind();loadChips();renderEvents();drawTrack();if(typeof initApp==='function')initApp();idbRecoverNewest(ok=>{if(ok)refreshFromRecovered()});
 </script></body></html>
