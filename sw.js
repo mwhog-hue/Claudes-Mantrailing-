@@ -1,7 +1,7 @@
 /* RH-Mantrailing-Assistent – Service Worker: startet die App auch ohne Internet (z. B. im Funkloch).
    Die Daten liegen im lokalen Gerätespeicher, nicht in diesem Cache.
    Bei jeder neuen Version CACHE_VERSION erhöhen. */
-const CACHE_VERSION = 'mantrailing-2.2.0';
+const CACHE_VERSION = 'mantrailing-2.6.0';
 const DATEIEN = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'];
 /* Kartenbibliothek (MapLibre) – ohne diese beiden Dateien startet die Live-Karte offline nicht, auch wenn Kacheln gespeichert sind. */
 const KARTENBIBLIOTHEK = ['https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js', 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css'];
