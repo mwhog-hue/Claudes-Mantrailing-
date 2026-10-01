@@ -1,29 +1,92 @@
-/* RH-Mantrailing-Assistent – Service Worker: startet die App auch ohne Internet (z. B. im Funkloch).
-   Die Daten liegen im lokalen Gerätespeicher, nicht in diesem Cache.
-   Bei jeder neuen Version CACHE_VERSION erhöhen. */
-const CACHE_VERSION = 'mantrailing-2.7.2';
-const DATEIEN = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'];
-/* Kartenbibliothek (MapLibre) – ohne diese beiden Dateien startet die Live-Karte offline nicht, auch wenn Kacheln gespeichert sind. */
-const KARTENBIBLIOTHEK = ['https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js', 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css'];
-self.addEventListener('install', e=>{
-  e.waitUntil(caches.open(CACHE_VERSION).then(c=>
-    // Einzeln laden: eine fehlende Datei (z. B. ein Icon) darf die Installation nicht komplett verhindern.
-    Promise.allSettled([...DATEIEN, ...KARTENBIBLIOTHEK].map(u=>c.add(u).catch(()=>{})))
-  ).then(()=>self.skipWaiting()));
+/* RH Trümmersuchassistent – Service Worker
+   Version 3.2.0 · Strategie: Netz zuerst, Cache als Rückfall (Offline-Start).
+   Bei jeder neuen App-Version die Zeile CACHE_VERSION anpassen (Präfix „rh-truemmer-“ beibehalten),
+   damit alte Dateien ersetzt werden. */
+const CACHE_PREFIX = 'rh-truemmer-';
+const CACHE = CACHE_PREFIX + '3.2.0';
+
+/* Kern: muss gelingen (App-Seite). */
+const CORE = ['./', './index.html'];
+
+/* Optional: wird vorgeladen, wenn vorhanden; fehlende Dateien brechen die
+   Installation nicht ab. Namen bei Bedarf an das eigene Repository anpassen. */
+const OPTIONAL = [
+  './manifest.webmanifest',
+  './apple-touch-icon.png',
+  './icon-192.png', './icon-512.png',
+  './icon-192-maskable.png', './icon-512-maskable.png',
+  './icon.png', './favicon.ico'
+];
+
+/* Kartenbibliothek (Leaflet) von cdnjs: wird vorab gespeichert, damit die Online-Karte-Funktion
+   auch dann startet, wenn sie zuvor nie online geöffnet wurde. Kacheln benötigen weiterhin Internet. */
+const LIBS = [
+  'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css'
+];
+const CDN_HOSTS = ['cdnjs.cloudflare.com'];
+
+self.addEventListener('install', event => {
+  event.waitUntil((async () => {
+    const c = await caches.open(CACHE);
+    /* cache:'reload' – nicht eine bis zu zehn Minuten alte Fassung aus dem Browser-Zwischenspeicher (GitHub Pages) übernehmen. */
+    await c.addAll(CORE.map(u => new Request(u, { cache: 'reload' })));
+    await Promise.allSettled([
+      ...OPTIONAL.map(u => c.add(new Request(u, { cache: 'reload' }))),
+      ...LIBS.map(u => c.add(u))
+    ]);
+    await self.skipWaiting();
+  })());
 });
-self.addEventListener('activate', e=>{ e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==CACHE_VERSION).map(x=>caches.delete(x)))).then(()=>self.clients.claim())); });
-self.addEventListener('fetch', e=>{
-  if(e.request.method!=='GET') return;
-  const u = new URL(e.request.url);
-  if(u.origin===location.origin){
-    // App-Dateien: Netz zuerst (Aktualisierungen kommen an), sonst Cache
-    e.respondWith(fetch(e.request).then(r=>{ const k=r.clone(); caches.open(CACHE_VERSION).then(c=>c.put(e.request,k)); return r; })
-      .catch(()=>caches.match(e.request).then(r=>r||caches.match('./index.html'))));
+
+/* Nur alte Caches DIESER App löschen. Alle RH-Apps auf demselben GitHub-Pages-Konto teilen sich
+   denselben Cache-Speicher; das Löschen „aller anderen“ Caches würde die Offline-Fassung der übrigen Apps entfernen. */
+self.addEventListener('activate', event => {
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(k => k.startsWith(CACHE_PREFIX) && k !== CACHE).map(k => caches.delete(k)));
+    await self.clients.claim();
+  })());
+});
+
+self.addEventListener('fetch', event => {
+  const req = event.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+
+  /* Wetterdienst, Ortssuche, Anthropic-API, Kartenkacheln: nie zwischenspeichern. */
+  if (/open-meteo\.com|nominatim|geocoding|api\.anthropic\.com|tile\.openstreetmap|tile\.opentopomap/.test(url.host)) return;
+
+  /* Bibliotheken vom CDN: Cache zuerst, sonst Netz und merken. */
+  if (CDN_HOSTS.includes(url.host)) {
+    event.respondWith((async () => {
+      const c = await caches.open(CACHE);
+      const hit = await c.match(req);
+      if (hit) return hit;
+      const res = await fetch(req);
+      if (res && (res.ok || res.type === 'opaque')) event.waitUntil(c.put(req, res.clone()).catch(() => {}));
+      return res;
+    })());
     return;
   }
-  if(u.host==='unpkg.com'){
-    // Kartenbibliothek: Cache zuerst (Version ist in der Adresse festgeschrieben)
-    e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(n=>{ const k=n.clone(); caches.open(CACHE_VERSION).then(c=>c.put(e.request,k)); return n; })));
+
+  /* Eigene Dateien: Netz zuerst, bei Ausfall aus dem Cache. */
+  if (url.origin === self.location.origin) {
+    event.respondWith((async () => {
+      const c = await caches.open(CACHE);
+      try {
+        const res = await fetch(req, { cache: 'no-cache' });
+        if (res && res.ok) event.waitUntil(c.put(req, res.clone()).catch(() => {}));
+        return res;
+      } catch (e) {
+        const hit = await c.match(req, { ignoreSearch: true });
+        if (hit) return hit;
+        if (req.mode === 'navigate') return (await c.match('./index.html')) || Response.error();
+        return Response.error();
+      }
+    })());
   }
-  // Wetter, Ortssuche und Kartenkacheln laufen bewusst am Service Worker vorbei (Kacheln speichert die App selbst).
 });
+
+/* Sofortiges Aktivieren, falls die Seite es anfordert. */
+self.addEventListener('message', e => { if (e.data === 'SKIP_WAITING') self.skipWaiting(); });
